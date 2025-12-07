@@ -1,0 +1,29 @@
+# Core Framework
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-dotenv==1.0.0
+
+# Database
+sqlalchemy==2.0.25
+psycopg2-binary
+alembic==1.13.1
+
+# Validation
+pydantic
+pydantic-settings
+
+# AI Integration
+openai  
+anthropic
+
+# HTTP Client
+httpx
+
+# Caching
+redis
+
+# Utilities
+python-multipart
+
+# CORS
+fastapi-CORS
