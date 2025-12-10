@@ -140,7 +140,41 @@ class ComparisonResponse(BaseModel):
     best_choice: Optional[UUID]  # Product ID of best match
     generated_at: datetime
 
+# ============================================
+# AUTH SCHEMAS
+# ============================================
 
+class UserRegister(BaseModel):
+    """User registration request"""
+    email: str = Field(..., pattern=r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
+    password: str = Field(..., min_length=6)
+    full_name: Optional[str] = None
+
+
+class UserLogin(BaseModel):
+    """User login request"""
+    email: str
+    password: str
+
+
+class UserResponse(BaseModel):
+    """User response (no password)"""
+    id: UUID
+    email: str
+    full_name: Optional[str]
+    is_active: bool
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class TokenResponse(BaseModel):
+    """JWT token response"""
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse
+    
 # ============================================
 # ERROR SCHEMAS
 # ============================================

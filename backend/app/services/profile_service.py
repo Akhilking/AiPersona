@@ -15,7 +15,7 @@ class ProfileService:
     def __init__(self, db: Session):
         self.db = db
     
-    def create_profile(self, profile_data: ProfileCreate) -> Profile:
+    def create_profile(self, profile_data: ProfileCreate, user_id: UUID) -> Profile:
         """Create a new pet profile with calculated fields"""
         
         # Calculate size category based on weight (for dogs)
@@ -24,6 +24,7 @@ class ProfileService:
             size_category = self._calculate_size_category(profile_data.weight_lbs)
         
         profile = Profile(
+            user_id=user_id,  # NEW
             name=profile_data.name,
             pet_type=profile_data.pet_type,
             age_years=profile_data.age_years,

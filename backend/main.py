@@ -5,7 +5,8 @@ import os
 from dotenv import load_dotenv
 
 from app.database import engine, Base
-from app.routers import profiles, products, recommendations
+from app.routers import profiles, products, recommendations, auth
+
 
 load_dotenv()
 
@@ -34,6 +35,7 @@ app.add_middleware(
 )
 
 # Include Routers
+app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(profiles.router, prefix="/api/profiles", tags=["Profiles"])
 app.include_router(products.router, prefix="/api/products", tags=["Products"])
 app.include_router(recommendations.router, prefix="/api/recommendations", tags=["Recommendations"])

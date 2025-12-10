@@ -12,6 +12,20 @@ import uuid
 from app.database import Base
 
 
+class User(Base):
+    """User accounts for authentication"""
+    __tablename__ = "users"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    email = Column(String, unique=True, nullable=False, index=True)
+    full_name = Column(String, nullable=True)
+    hashed_password = Column(String, nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationship
+    profiles = relationship("Profile", back_populates="user", cascade="all, delete-orphan")
+    
 class Profile(Base):
     """
     Pet profiles for MVP (extensible to multi-niche in Phase 2)
@@ -23,6 +37,9 @@ class Profile(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String, nullable=False)  # Pet name
+    
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    user = relationship("User", back_populates="profiles")
     
     # Phase 1: Direct columns (will migrate to profile_data JSONB in Phase 2)
     pet_type = Column(String, nullable=False)  # dog, cat

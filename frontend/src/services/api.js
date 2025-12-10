@@ -9,6 +9,29 @@ const apiClient = axios.create({
     },
 });
 
+apiClient.interceptors.request.use((config) => {
+    const authStorage = localStorage.getItem('auth-storage');
+    if (authStorage) {
+        try {
+            const { state } = JSON.parse(authStorage);
+            if (state?.token) {
+                config.headers.Authorization = `Bearer ${state.token}`;
+            }
+        } catch (e) {
+            console.error('Error parsing auth token:', e);
+        }
+    }
+    return config;
+});
+
+// Auth API (NEW)
+export const authAPI = {
+    register: (data) => apiClient.post('/auth/register', data),
+    login: (data) => apiClient.post('/auth/login', data),
+    getMe: () => apiClient.get('/auth/me'),
+    getMyProfiles: () => apiClient.get('/auth/me/profiles'),
+};
+
 // Profiles API
 export const profilesAPI = {
     create: (data) => apiClient.post('/profiles/', data),

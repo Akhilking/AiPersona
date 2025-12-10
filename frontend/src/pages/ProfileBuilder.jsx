@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Dog, Plus, X } from 'lucide-react';
 import { profilesAPI } from '../services/api';
 import { useProfileStore } from '../store';
@@ -10,6 +10,7 @@ const HEALTH_CONDITIONS = ['sensitive_stomach', 'joint_issues', 'skin_allergies'
 
 export default function ProfileBuilder() {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const setCurrentProfile = useProfileStore((state) => state.setCurrentProfile);
 
     const [formData, setFormData] = useState({
@@ -33,6 +34,9 @@ export default function ProfileBuilder() {
             setCurrentProfile(response.data);
             navigate('/recommendations');
         },
+        onSettled: () => {
+            queryClient.invalidateQueries(['my-profiles']);
+        }
     });
 
     const handleChange = (e) => {
@@ -67,14 +71,22 @@ export default function ProfileBuilder() {
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         const submitData = {
             ...formData,
             age_years: parseFloat(formData.age_years),
             weight_lbs: formData.weight_lbs ? parseFloat(formData.weight_lbs) : null,
         };
-        createProfileMutation.mutate(submitData);
+
+        try {
+            const response = await profilesAPI.create(submitData);
+            setCurrentProfile(response.data);
+            navigate('/recommendations');
+        } catch (error) {
+            console.error('Error creating profile:', error);
+            alert('Failed to create profile. Please try again.');
+        }
     };
 
     return (
@@ -144,8 +156,8 @@ export default function ProfileBuilder() {
                                     type="button"
                                     onClick={() => toggleArrayItem('allergies', allergen)}
                                     className={`px-4 py-2 rounded-lg border transition ${formData.allergies.includes(allergen)
-                                            ? 'bg-red-100 border-red-300 text-red-700'
-                                            : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400'
+                                        ? 'bg-red-100 border-red-300 text-red-700'
+                                        : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400'
                                         }`}
                                 >
                                     {allergen}
@@ -193,8 +205,8 @@ export default function ProfileBuilder() {
                                     type="button"
                                     onClick={() => toggleArrayItem('health_conditions', condition)}
                                     className={`px-4 py-2 rounded-lg border transition ${formData.health_conditions.includes(condition)
-                                            ? 'bg-primary-100 border-primary-300 text-primary-700'
-                                            : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400'
+                                        ? 'bg-primary-100 border-primary-300 text-primary-700'
+                                        : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400'
                                         }`}
                                 >
                                     {condition.replace('_', ' ')}
