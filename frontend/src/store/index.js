@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-// Auth Store (NEW)
+// Auth Store
 export const useAuthStore = create(
     persist(
-        (set) => ({
+        (set, get) => ({
             user: null,
             token: null,
             isAuthenticated: false,
@@ -16,8 +16,12 @@ export const useAuthStore = create(
             }),
 
             logout: () => {
+                // Clear profile store
                 useProfileStore.getState().clearProfile();
-                useProfileStore.getState().setProfiles([]);
+
+                // Clear localStorage
+                localStorage.removeItem('profile-storage');
+                localStorage.removeItem('auth-storage');
 
                 set({
                     token: null,
@@ -25,6 +29,7 @@ export const useAuthStore = create(
                     isAuthenticated: false
                 });
             },
+
             updateUser: (user) => set({ user }),
         }),
         {
@@ -33,19 +38,30 @@ export const useAuthStore = create(
     )
 );
 
-// Profile Store (UPDATED)
+// Profile Store
 export const useProfileStore = create(
     persist(
         (set) => ({
             currentProfile: null,
             profiles: [],
+            userId: null, // Track which user owns these profiles
 
             setCurrentProfile: (profile) => set({ currentProfile: profile }),
-            setProfiles: (profiles) => set({ profiles }),
+
+            setProfiles: (profiles, userId) => set({
+                profiles,
+                userId
+            }),
+
             addProfile: (profile) => set((state) => ({
                 profiles: [...state.profiles, profile]
             })),
-            clearProfile: () => set({ currentProfile: null, profiles: [] }),
+
+            clearProfile: () => set({
+                currentProfile: null,
+                profiles: [],
+                userId: null
+            }),
         }),
         {
             name: 'profile-storage',
@@ -53,18 +69,21 @@ export const useProfileStore = create(
     )
 );
 
-// Comparison Store (unchanged)
+// Comparison Store
 export const useComparisonStore = create((set) => ({
     selectedProducts: [],
+
     addProduct: (product) =>
         set((state) => {
             if (state.selectedProducts.length >= 3) return state;
             if (state.selectedProducts.find(p => p.id === product.id)) return state;
             return { selectedProducts: [...state.selectedProducts, product] };
         }),
+
     removeProduct: (productId) =>
         set((state) => ({
             selectedProducts: state.selectedProducts.filter(p => p.id !== productId)
         })),
+
     clearSelection: () => set({ selectedProducts: [] }),
 }));

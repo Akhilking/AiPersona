@@ -1,12 +1,23 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Dog, User, LogOut, Home, Sparkles } from 'lucide-react';
 import { useAuthStore, useProfileStore } from '../store';
+import { useQuery } from '@tanstack/react-query';
 
 export default function Navbar() {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, logout } = useAuthStore();
     const currentProfile = useProfileStore((state) => state.currentProfile);
+
+    const { data: profiles = [] } = useQuery({
+        queryKey: ['my-profiles'],
+        queryFn: async () => {
+            const response = await authAPI.getMyProfiles();
+            return response.data;
+        },
+        refetchOnWindowFocus: true,
+        staleTime: 0,
+    });
 
     const handleLogout = () => {
         logout();
@@ -46,7 +57,7 @@ export default function Navbar() {
                                 }`}
                         >
                             <User className="w-5 h-5" />
-                            <span>My Profiles</span>
+                            <span>My Profiles : ({profiles.length})</span>
                         </Link>
 
                         {currentProfile && (

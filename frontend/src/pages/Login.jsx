@@ -92,6 +92,7 @@ export default function Login() {
                                 type="email"
                                 required
                                 value={formData.email}
+                                // value={"akhil@gmail.com"}
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
                                 placeholder="you@example.com"
@@ -107,6 +108,7 @@ export default function Login() {
                                 required
                                 minLength={6}
                                 value={formData.password}
+                                // value={"akhil1234"}
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
                                 placeholder="••••••••"

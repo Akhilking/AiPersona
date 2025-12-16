@@ -13,19 +13,19 @@ from uuid import UUID
 # ============================================
 
 class ProfileCreate(BaseModel):
-    """Request body for creating a pet profile"""
-    name: str = Field(..., min_length=1, max_length=100, description="Pet's name")
-    pet_type: str = Field(..., pattern="^(dog|cat)$", description="Type of pet")
-    age_years: float = Field(..., ge=0, le=30, description="Age in years")
-    weight_lbs: Optional[float] = Field(None, ge=0, le=300, description="Weight in pounds")
-    allergies: List[str] = Field(default_factory=list, description="List of known allergens")
-    health_conditions: List[str] = Field(default_factory=list, description="Health conditions")
-    preferences: Dict[str, Any] = Field(default_factory=dict, description="Additional preferences")
+    """Request body for creating a profile"""
+    name: str = Field(..., min_length=1, max_length=100)
+    profile_category: str = Field(..., pattern="^(dog|cat|baby|human)$")
+    age_years: float = Field(..., ge=0, le=120)
+    weight_lbs: Optional[float] = Field(None, ge=0, le=500)
+    allergies: List[str] = Field(default_factory=list)
+    health_conditions: List[str] = Field(default_factory=list)
+    preferences: Dict[str, Any] = Field(default_factory=dict)
+    profile_data: Dict[str, Any] = Field(default_factory=dict)
     
     @field_validator('allergies', 'health_conditions')
     @classmethod
     def lowercase_lists(cls, v):
-        """Normalize to lowercase for consistent matching"""
         return [item.lower().strip() for item in v if item.strip()]
 
 
@@ -43,13 +43,15 @@ class ProfileResponse(BaseModel):
     """Response format for profile data"""
     id: UUID
     name: str
-    pet_type: str
+    profile_category: str  
+    pet_type: Optional[str] = None 
     age_years: float
     weight_lbs: Optional[float]
     size_category: Optional[str]
     allergies: List[str]
     health_conditions: List[str]
     preferences: Dict[str, Any]
+    profile_data: Dict[str, Any]
     created_at: datetime
     updated_at: datetime
     

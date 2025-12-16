@@ -8,19 +8,22 @@ import './index.css';
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
-            refetchOnWindowFocus: false,
-            retry: 1,
-            staleTime: 5 * 60 * 1000, // 5 minutes
+            refetchOnWindowFocus: true, // Refetch when window regains focus
+            refetchOnMount: true, // Always refetch when component mounts
+            refetchOnReconnect: true, // Refetch when internet reconnects
+            staleTime: 0, // Data is immediately stale (can be increased for caching)
+            cacheTime: 5 * 60 * 1000, // Keep unused data in cache for 5 minutes
+            retry: 1, // Retry failed requests once
         },
     },
 });
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-    <React.StrictMode>
-        <QueryClientProvider client={queryClient}>
-            <BrowserRouter>
-                <App />
-            </BrowserRouter>
+        <React.StrictMode>
+            <QueryClientProvider client={queryClient}>
+                <BrowserRouter>
+                    <App />
+                </BrowserRouter>
         </QueryClientProvider>
     </React.StrictMode>
 );

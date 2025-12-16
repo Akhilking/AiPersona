@@ -18,21 +18,28 @@ class ProfileService:
     def create_profile(self, profile_data: ProfileCreate, user_id: UUID) -> Profile:
         """Create a new pet profile with calculated fields"""
         
-        # Calculate size category based on weight (for dogs)
+        # Calculate size category based on weight and category
         size_category = None
-        if profile_data.pet_type == "dog" and profile_data.weight_lbs:
-            size_category = self._calculate_size_category(profile_data.weight_lbs)
+        if profile_data.weight_lbs and profile_data.profile_category in ["dog", "cat"]:
+            if profile_data.weight_lbs <= 20:
+                size_category = "small"
+            elif profile_data.weight_lbs <= 50:
+                size_category = "medium"
+            else:
+                size_category = "large"
         
         profile = Profile(
-            user_id=user_id,  # NEW
+            user_id=user_id,
             name=profile_data.name,
-            pet_type=profile_data.pet_type,
+            profile_category=profile_data.profile_category,
+            pet_type=profile_data.profile_category if profile_data.profile_category in ["dog", "cat"] else None,
             age_years=profile_data.age_years,
             weight_lbs=profile_data.weight_lbs,
             size_category=size_category,
             allergies=profile_data.allergies,
             health_conditions=profile_data.health_conditions,
-            preferences=profile_data.preferences
+            preferences=profile_data.preferences,
+            profile_data=profile_data.profile_data
         )
         
         self.db.add(profile)

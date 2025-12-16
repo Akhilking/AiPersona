@@ -1,229 +1,374 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Dog, Star, AlertCircle, Plus } from 'lucide-react';
-import { productsAPI, authAPI } from '../services/api';
-import { useAuthStore, useProfileStore } from '../store';
-import { useEffect } from 'react';
+import { Dog, Cat, Baby, User, Star, ChevronRight, Plus, Sparkles, RefreshCw } from 'lucide-react';
+import { authAPI, recommendationsAPI } from '../services/api';
+import { useProfileStore, useAuthStore } from '../store';
+
+const CATEGORY_CONFIG = {
+    dog: { icon: Dog, color: 'blue', label: 'Dog' },
+    cat: { icon: Cat, color: 'purple', label: 'Cat' },
+    baby: { icon: Baby, color: 'pink', label: 'Baby' },
+    human: { icon: User, color: 'green', label: 'Adult' }
+};
 
 export default function Home() {
     const navigate = useNavigate();
-    const currentProfile = useProfileStore((state) => state.currentProfile);
-    const clearProfile = useProfileStore((state) => state.clearProfile);
+    const { currentProfile, setCurrentProfile } = useProfileStore();
     const user = useAuthStore((state) => state.user);
 
-    // Fetch user's profiles to validate currentProfile
-    const { data: userProfiles = [] } = useQuery({
+    // Fetch user's profiles
+    const { data: userProfiles = [], isLoading: profilesLoading, refetch: refetchProfiles } = useQuery({
         queryKey: ['my-profiles'],
         queryFn: async () => {
             const response = await authAPI.getMyProfiles();
             return response.data;
         },
+        refetchOnMount: 'always',
+        refetchOnWindowFocus: true,
     });
 
-    // Clear currentProfile if it doesn't belong to current user
+    // Auto-select first profile if none selected
     useEffect(() => {
-        if (currentProfile && userProfiles.length > 0) {
-            const profileExists = userProfiles.some(p => p.id === currentProfile.id);
-            if (!profileExists) {
-                clearProfile(); // Profile doesn't belong to current user
-            }
-        }
-    }, [currentProfile, userProfiles, clearProfile]);
+        if (!profilesLoading && userProfiles.length > 0) {
+            const profileStore = useProfileStore.getState();
 
-    // Fetch all products
-    const { data: productsData, isLoading } = useQuery({
-        queryKey: ['all-products'],
+            // Check if profiles belong to current user
+            if (profileStore.userId !== user?.id) {
+                // Clear old user's profiles
+                profileStore.clearProfile();
+                localStorage.removeItem('profile-storage');
+            }
+
+            // Auto-select profile if none selected or invalid
+            if (!currentProfile || !userProfiles.some(p => p.id === currentProfile.id)) {
+                const latestProfile = [...userProfiles].sort((a, b) =>
+                    new Date(b.created_at) - new Date(a.created_at)
+                )[0];
+                setCurrentProfile(latestProfile);
+            }
+
+            // Store userId to track ownership
+            profileStore.setProfiles(userProfiles, user?.id);
+        }
+    }, [userProfiles, profilesLoading, currentProfile, setCurrentProfile, user]);
+
+    // Fetch recommendations for current profile
+    const { data: recommendationsData, isLoading: recsLoading, refetch } = useQuery({
+        queryKey: ['recommendations', currentProfile?.id],
         queryFn: async () => {
-            const response = await productsAPI.list();
+            if (!currentProfile) return null;
+            const response = await recommendationsAPI.get(currentProfile.id);
             return response.data;
         },
+        enabled: !!currentProfile,
+        refetchOnMount: 'always',
+        refetchOnWindowFocus: true,
     });
 
-    const products = Array.isArray(productsData) ? productsData : (productsData?.products || []);
+    const recommendations = recommendationsData?.recommendations || [];
+
+    const handleProfileSwitch = (profile) => {
+        setCurrentProfile(profile);
+    };
+
+    // No profiles - Onboarding
+    if (!profilesLoading && userProfiles.length === 0) {
+        return <OnboardingView onCreateProfile={() => navigate('/profile/templates')} />;
+    }
+
+    // Loading state
+    if (profilesLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading your profiles...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-7xl mx-auto">
-            {/* Profile Creation Banner - Always Visible */}
-            {!currentProfile && (
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg shadow-lg p-6 mb-8 sticky top-4 z-10">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <div className="bg-white/20 p-3 rounded-full">
-                                <Dog className="w-8 h-8" />
+            {/* Header with Profile Switcher */}
+            <div className="mb-8">
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                            AI Recommendations
+                        </h1>
+                        <p className="text-gray-600">
+                            Personalized product suggestions powered by AI
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => navigate('/profiles')}
+                        className="btn-secondary flex items-center gap-2"
+                    >
+                        <Plus className="w-5 h-5" />
+                        Manage Profiles
+                    </button>
+                </div>
+
+                {/* Profile Switcher Bar */}
+                <div className="bg-white rounded-xl shadow-md p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                        <Sparkles className="w-5 h-5 text-primary-600" />
+                        <span className="font-semibold text-gray-900">Select Profile:</span>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                        {userProfiles.map((profile) => {
+                            const category = profile.profile_category || 'dog';
+                            const config = CATEGORY_CONFIG[category] || CATEGORY_CONFIG.dog;
+                            const Icon = config.icon;
+                            const isActive = currentProfile?.id === profile.id;
+
+                            return (
+                                <button
+                                    key={profile.id}
+                                    onClick={() => handleProfileSwitch(profile)}
+                                    className={`flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition-all ${isActive
+                                        ? 'border-primary-500 bg-primary-50 shadow-md'
+                                        : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow'
+                                        }`}
+                                >
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isActive ? 'bg-primary-100' : 'bg-gray-100'
+                                        }`}>
+                                        <Icon className={`w-5 h-5 ${isActive ? 'text-primary-600' : 'text-gray-600'
+                                            }`} />
+                                    </div>
+                                    <div className="text-left">
+                                        <p className={`font-semibold ${isActive ? 'text-primary-700' : 'text-gray-900'
+                                            }`}>
+                                            {profile.name}
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                            {config.label} • {profile.age_years} yrs
+                                        </p>
+                                    </div>
+                                    {isActive && (
+                                        <div className="ml-2">
+                                            <div className="w-2 h-2 bg-primary-500 rounded-full"></div>
+                                        </div>
+                                    )}
+                                </button>
+                            );
+                        })}
+
+                        {/* Add New Profile Button */}
+                        <button
+                            onClick={() => navigate('/profile/templates')}
+                            className="flex items-center gap-3 px-4 py-3 rounded-lg border-2 border-dashed border-gray-300 hover:border-primary-400 hover:bg-primary-50 transition-all"
+                        >
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-100">
+                                <Plus className="w-5 h-5 text-gray-600" />
                             </div>
-                            <div>
-                                <h3 className="text-xl font-bold mb-1">
-                                    Create a profile for personalized recommendations!
-                                </h3>
-                                <p className="text-blue-100">
-                                    Get AI-powered product suggestions based on your pet's allergies, age, and health conditions
-                                </p>
+                            <span className="font-medium text-gray-600">New Profile</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Active Profile Info */}
+            {currentProfile && (
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-8 border border-blue-200">
+                    <div className="flex items-start justify-between">
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-900 mb-2">
+                                Recommendations for {currentProfile.name}
+                            </h2>
+                            <div className="flex flex-wrap gap-2 mb-3">
+                                {currentProfile.allergies?.length > 0 && (
+                                    <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+                                        {currentProfile.allergies.length} Allergie(s)
+                                    </span>
+                                )}
+                                {currentProfile.health_conditions?.length > 0 && (
+                                    <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">
+                                        {currentProfile.health_conditions.length} Health Condition(s)
+                                    </span>
+                                )}
+                                {currentProfile.preferences?.price_range && (
+                                    <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium capitalize">
+                                        {currentProfile.preferences.price_range} Budget
+                                    </span>
+                                )}
                             </div>
+                            <p className="text-gray-600 text-sm">
+                                AI has analyzed {recommendations.length > 0 ? recommendations.length : 'multiple'} products based on this profile
+                            </p>
                         </div>
                         <button
-                            onClick={() => navigate('/profiles')}
-                            className="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition flex items-center gap-2 whitespace-nowrap"
+                            onClick={() => refetch()}
+                            disabled={recsLoading}
+                            className="btn-secondary flex items-center gap-2"
                         >
-                            <Plus className="w-5 h-5" />
-                            Create Profile
+                            <RefreshCw className={`w-4 h-4 ${recsLoading ? 'animate-spin' : ''}`} />
+                            Refresh
                         </button>
                     </div>
                 </div>
             )}
 
-            {currentProfile && (
-                <div className="bg-green-50 border border-green-200 text-green-800 rounded-lg p-4 mb-8">
-                    <div className="flex items-center gap-3">
-                        <Dog className="w-5 h-5 text-green-600" />
-                        <p>
-                            <span className="font-semibold">Profile Active: {currentProfile.name}</span>
-                            {' · '}
-                            <button
-                                onClick={() => navigate('/recommendations')}
-                                className="text-green-700 underline hover:text-green-900"
-                            >
-                                View personalized recommendations
-                            </button>
-                        </p>
-                    </div>
-                </div>
-            )}
-
-            {/* Header */}
-            <div className="mb-8">
-                <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                    Browse All Pet Food Products
-                </h1>
-                <p className="text-gray-600 text-lg">
-                    {products.length} premium dog food options available
-                </p>
-            </div>
-
-            {/* Loading State */}
-            {isLoading && (
+            {/* Recommendations Grid */}
+            {recsLoading ? (
                 <div className="flex items-center justify-center py-20">
                     <div className="text-center">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-                        <p className="text-gray-600">Loading products...</p>
+                        <p className="text-gray-600">Generating AI recommendations...</p>
                     </div>
                 </div>
-            )}
+            ) : recommendations.length > 0 ? (
+                <>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {recommendations.map((rec) => (
+                            <RecommendationCard key={rec.product.id} recommendation={rec} />
+                        ))}
+                    </div>
 
-            {/* Products Grid */}
-            {!isLoading && products.length > 0 && (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {products.map((product) => (
-                        <ProductCard key={product.id} product={product} />
-                    ))}
-                </div>
-            )}
-
-            {/* Empty State */}
-            {!isLoading && products.length === 0 && (
-                <div className="text-center py-20">
-                    <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    {/* Compare Button */}
+                    {recommendations.length >= 2 && (
+                        <div className="mt-8 text-center">
+                            <button
+                                onClick={() => navigate('/comparison')}
+                                className="btn-primary inline-flex items-center gap-2"
+                            >
+                                <ChevronRight className="w-5 h-5" />
+                                Compare Products
+                            </button>
+                        </div>
+                    )}
+                </>
+            ) : (
+                <div className="text-center py-20 bg-white rounded-xl shadow-md">
+                    <Dog className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                     <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                        No products available
+                        No recommendations available
                     </h3>
-                    <p className="text-gray-600">
-                        Products will appear here once they're added to the database.
+                    <p className="text-gray-600 mb-6">
+                        We couldn't find any products matching this profile's requirements.
                     </p>
+                    <button onClick={() => navigate('/profile/new')} className="btn-secondary">
+                        Update Profile Settings
+                    </button>
                 </div>
             )}
         </div>
     );
 }
 
-function ProductCard({ product }) {
+function OnboardingView({ onCreateProfile }) {
+    return (
+        <div className="max-w-4xl mx-auto">
+            <div className="text-center py-16 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl shadow-lg mb-8">
+                <div className="inline-flex items-center justify-center w-24 h-24 bg-white rounded-full shadow-lg mb-6">
+                    <Sparkles className="w-12 h-12 text-primary-600" />
+                </div>
+                <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                    Welcome to AI Persona! 🎉
+                </h1>
+                <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+                    Get started by creating a profile to receive AI-powered personalized recommendations
+                </p>
+                <button
+                    onClick={onCreateProfile}
+                    className="btn-primary text-lg px-8 py-4 shadow-lg hover:shadow-xl transition inline-flex items-center gap-3"
+                >
+                    <Plus className="w-6 h-6" />
+                    Create Your First Profile
+                </button>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6">
+                <FeatureCard
+                    icon="🐕"
+                    title="Pet Profiles"
+                    description="Dogs and cats with dietary needs"
+                />
+                <FeatureCard
+                    icon="👶"
+                    title="Baby Profiles"
+                    description="Personalized baby product recommendations"
+                />
+                <FeatureCard
+                    icon="👤"
+                    title="Adult Profiles"
+                    description="Health and dietary preferences"
+                />
+            </div>
+        </div>
+    );
+}
+
+function FeatureCard({ icon, title, description }) {
+    return (
+        <div className="bg-white rounded-lg shadow-md p-6 text-center">
+            <div className="text-5xl mb-4">{icon}</div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+            <p className="text-gray-600 text-sm">{description}</p>
+        </div>
+    );
+}
+
+function RecommendationCard({ recommendation }) {
+    const product = recommendation.product;
     const attributes = product.attributes || {};
-    const ingredients = attributes.ingredients || {};
     const nutrition = attributes.nutrition || {};
 
     return (
-        <div className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow overflow-hidden">
-            {/* Product Image */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 h-48 flex items-center justify-center">
-                {product.image_url ? (
-                    <img
-                        src={product.image_url}
-                        alt={product.name}
-                        className="h-full w-full object-cover"
-                    />
-                ) : (
-                    <Dog className="w-20 h-20 text-gray-400" />
-                )}
+        <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all overflow-hidden">
+            {/* Match Score Badge */}
+            <div className="relative">
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 h-48 flex items-center justify-center">
+                    {product.image_url ? (
+                        <img
+                            src={product.image_url}
+                            alt={product.name}
+                            className="h-full w-full object-cover"
+                        />
+                    ) : (
+                        <Dog className="w-20 h-20 text-gray-400" />
+                    )}
+                </div>
+                <div className="absolute top-3 right-3 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                    {recommendation.match_score}% Match
+                </div>
             </div>
 
-            {/* Product Info */}
             <div className="p-5">
-                {/* Brand */}
-                <p className="text-sm text-primary-600 font-medium mb-1">{product.brand}</p>
-
-                {/* Name */}
+                <p className="text-xs text-primary-600 font-medium mb-1">{product.brand}</p>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
                     {product.name}
                 </h3>
 
-                {/* Description */}
-                {product.description && (
+                {/* AI Explanation */}
+                {recommendation.explanation && (
                     <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                        {product.description}
+                        {recommendation.explanation}
                     </p>
                 )}
 
-                {/* Key Info */}
-                <div className="space-y-2 mb-4">
-                    {attributes.primary_protein && (
-                        <div className="flex items-center gap-2 text-sm">
-                            <span className="text-gray-500">Protein:</span>
-                            <span className="font-medium capitalize">{attributes.primary_protein}</span>
-                        </div>
-                    )}
-
-                    {attributes.life_stage && attributes.life_stage.length > 0 && (
-                        <div className="flex items-center gap-2 text-sm">
-                            <span className="text-gray-500">Life Stage:</span>
-                            <span className="font-medium capitalize">{attributes.life_stage.join(', ')}</span>
-                        </div>
-                    )}
-
-                    {nutrition.protein_pct && (
-                        <div className="flex items-center gap-2 text-sm">
-                            <span className="text-gray-500">Nutrition:</span>
-                            <span className="font-medium">
-                                Protein: {nutrition.protein_pct}% · Fat: {nutrition.fat_pct}%
-                            </span>
-                        </div>
-                    )}
-                </div>
-
-                {/* Tags */}
-                {attributes.features && attributes.features.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-4">
-                        {attributes.features.slice(0, 3).map((feature) => (
-                            <span
-                                key={feature}
-                                className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full capitalize"
-                            >
-                                {feature.replace('_', ' ')}
-                            </span>
-                        ))}
+                {/* Quick Pros */}
+                {recommendation.pros && recommendation.pros.length > 0 && (
+                    <div className="mb-3">
+                        <p className="text-xs font-semibold text-green-700 mb-1">Why it's good:</p>
+                        <ul className="space-y-1">
+                            {recommendation.pros.slice(0, 2).map((pro, idx) => (
+                                <li key={idx} className="text-xs text-gray-600 flex items-start gap-1">
+                                    <span className="text-green-500 mt-0.5">✓</span>
+                                    <span className="line-clamp-1">{pro}</span>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
                 )}
 
-                {/* Footer */}
-                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                    {/* Price */}
-                    <div>
-                        <span className="text-2xl font-bold text-gray-900">
-                            ${product.price.toFixed(2)}
-                        </span>
-                        <span className="text-sm text-gray-500 ml-1">
-                            {product.price_unit}
-                        </span>
-                    </div>
-
-                    {/* Rating */}
+                {/* Price & Rating */}
+                <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                    <span className="text-xl font-bold text-gray-900">
+                        ${product.price.toFixed(2)}
+                    </span>
                     {product.rating > 0 && (
                         <div className="flex items-center gap-1">
                             <Star className="w-4 h-4 text-yellow-400 fill-current" />

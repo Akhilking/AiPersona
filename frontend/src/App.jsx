@@ -1,18 +1,26 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate,useLocation } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore, useProfileStore } from './store';
 import Navbar from './components/Navbar';
 import Login from './pages/Login';
+import Home from './pages/Home';
 import ProfilesDashboard from './pages/ProfilesDashboard';
+import ProfileTemplateSelector from './pages/ProfileTemplateSelector';
 import ProfileBuilder from './pages/ProfileBuilder';
 import Recommendations from './pages/Recommendations';
 import Comparison from './pages/Comparison';
-import Home from './pages/Home';
+import { useEffect } from 'react';
 
 function App() {
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
     const currentProfile = useProfileStore((state) => state.currentProfile);
+    const location = useLocation();
+    const queryClient = useQueryClient();
 
-    // Protected Route wrapper
+    useEffect(() => {
+        queryClient.invalidateQueries(['my-profiles']);
+    }, [location.pathname, queryClient]);
+
     const ProtectedRoute = ({ children }) => {
         if (!isAuthenticated) {
             return <Navigate to="/login" replace />;
@@ -25,18 +33,20 @@ function App() {
             {isAuthenticated && <Navbar />}
             <main className={isAuthenticated ? "container mx-auto px-4 py-8" : ""}>
                 <Routes>
-                    {/* Public Routes */}
                     <Route path="/login" element={
-                        isAuthenticated ? <Navigate to="/profiles" replace /> : <Login />
+                        isAuthenticated ? <Navigate to="/" replace /> : <Login />
                     } />
 
-                    {/* Protected Routes */}
                     <Route path="/" element={
                         <ProtectedRoute><Home /></ProtectedRoute>
                     } />
 
                     <Route path="/profiles" element={
                         <ProtectedRoute><ProfilesDashboard /></ProtectedRoute>
+                    } />
+
+                    <Route path="/profile/templates" element={
+                        <ProtectedRoute><ProfileTemplateSelector /></ProtectedRoute>
                     } />
 
                     <Route path="/profile/new" element={

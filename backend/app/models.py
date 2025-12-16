@@ -26,42 +26,43 @@ class User(Base):
     # Relationship
     profiles = relationship("Profile", back_populates="user", cascade="all, delete-orphan")
     
+# In backend/app/models.py - Update Profile class
+
 class Profile(Base):
-    """
-    Pet profiles for MVP (extensible to multi-niche in Phase 2)
-    
-    Phase 1: Hardcoded pet food attributes
-    Phase 2+: Add niche_id FK, make profile_data fully dynamic
-    """
+    """Multi-niche profile system"""
     __tablename__ = "profiles"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(String, nullable=False)  # Pet name
-    
+    name = Column(String, nullable=False)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    user = relationship("User", back_populates="profiles")
     
-    # Phase 1: Direct columns (will migrate to profile_data JSONB in Phase 2)
-    pet_type = Column(String, nullable=False)  # dog, cat
+    # Multi-niche support
+    profile_category = Column(String, nullable=False)  # dog, cat, baby, human
+    pet_type = Column(String, nullable=True)  # Deprecated, use profile_category
+    
     age_years = Column(Float, nullable=False)
     weight_lbs = Column(Float, nullable=True)
-    size_category = Column(String, nullable=True)  # small, medium, large
+    size_category = Column(String, nullable=True)
     
-    # JSONB for complex/flexible data (Phase 2 ready)
-    allergies = Column(JSONB, default=list)  # ["chicken", "corn"]
-    health_conditions = Column(JSONB, default=list)  # ["sensitive_stomach"]
-    preferences = Column(JSONB, default=dict)  # {"grain_free": true, "price_range": "mid"}
+    # JSONB for flexible data
+    allergies = Column(JSONB, default=list)
+    health_conditions = Column(JSONB, default=list)
+    preferences = Column(JSONB, default=dict)
     
-    # Future: Full dynamic profile data
-    # niche_id = Column(UUID(as_uuid=True), ForeignKey("niches.id"))
-    # profile_data = Column(JSONB)  # All profile fields go here in Phase 2
+    # Additional profile data (flexible for any niche)
+    profile_data = Column(JSONB, default=dict)
+    """
+    Examples:
+    - Dog/Cat: {"breed": "Golden Retriever", "activity_level": "high"}
+    - Baby: {"feeding_type": "formula", "concerns": ["colic"]}
+    - Human: {"dietary_preference": "vegan", "fitness_goal": "weight_loss"}
+    """
     
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships
+    user = relationship("User", back_populates="profiles")
     recommendations = relationship("Recommendation", back_populates="profile", cascade="all, delete-orphan")
-
 
 class Product(Base):
     """
