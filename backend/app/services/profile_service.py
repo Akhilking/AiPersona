@@ -6,6 +6,7 @@ Business logic for profile management
 from sqlalchemy.orm import Session
 from uuid import UUID
 from typing import List, Optional
+from datetime import datetime
 
 from app.models import Profile
 from app.schemas import ProfileCreate, ProfileUpdate
@@ -55,23 +56,31 @@ class ProfileService:
         """List all profiles with pagination"""
         return self.db.query(Profile).offset(skip).limit(limit).all()
     
-    def update_profile(self, profile_id: UUID, profile_update: ProfileUpdate) -> Optional[Profile]:
-        """Update an existing profile"""
+    def update_profile(self, profile_id: UUID, profile_update: ProfileUpdate) -> Profile:
+        """Update profile and invalidate cache if critical fields changed"""
         profile = self.get_profile(profile_id)
         if not profile:
-            return None
+            raise ValueError("Profile not found")
         
-        update_data = profile_update.model_dump(exclude_unset=True)
+        # Check if critical fields are changing
+        critical_fields = ['allergies', 'health_conditions', 'age_years', 'profile_category']
+        should_invalidate = any(
+            getattr(profile_update, field, None) is not None 
+            for field in critical_fields
+        )
         
-        # Recalculate size category if weight changed
-        if "weight_lbs" in update_data and profile.pet_type == "dog":
-            update_data["size_category"] = self._calculate_size_category(update_data["weight_lbs"])
-        
-        for field, value in update_data.items():
+        # Update fields
+        for field, value in profile_update.dict(exclude_unset=True).items():
             setattr(profile, field, value)
         
+        profile.updated_at = datetime.utcnow()
         self.db.commit()
         self.db.refresh(profile)
+        
+        # Invalidate cache if needed
+        if should_invalidate:
+            self.invalidate_recommendation_cache(profile_id)
+        
         return profile
     
     def delete_profile(self, profile_id: UUID) -> bool:
@@ -86,10 +95,20 @@ class ProfileService:
     
     @staticmethod
     def _calculate_size_category(weight_lbs: float) -> str:
-        """Calculate dog size category from weight"""
+        """Calculate size category from weight"""
         if weight_lbs <= 20:
             return "small"
         elif weight_lbs <= 50:
             return "medium"
         else:
             return "large"
+    
+    def invalidate_recommendation_cache(self, profile_id: UUID) -> None:
+        """Invalidate cached recommendations when profile changes"""
+        profile = self.db.query(Profile).filter(Profile.id == profile_id).first()
+        if profile:
+            profile.recommended_product_ids = []
+            profile.recommendations_generated_at = None
+            profile.recommendations_cache_version += 1
+            self.db.commit()
+            print(f"🗑️ Invalidated recommendation cache for {profile.name}")

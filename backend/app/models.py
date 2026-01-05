@@ -51,19 +51,18 @@ class Profile(Base):
     
     # Additional profile data (flexible for any niche)
     profile_data = Column(JSONB, default=dict)
-    """
-    Examples:
-    - Dog/Cat: {"breed": "Golden Retriever", "activity_level": "high"}
-    - Baby: {"feeding_type": "formula", "concerns": ["colic"]}
-    - Human: {"dietary_preference": "vegan", "fitness_goal": "weight_loss"}
-    """
+    
+    # 🆕 Cached recommended product IDs (regenerated when profile changes)
+    recommended_product_ids = Column(JSONB, default=list)
+    recommendations_generated_at = Column(DateTime, nullable=True)
+    recommendations_cache_version = Column(Integer, default=1)  # Increment to force refresh
     
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     user = relationship("User", back_populates="profiles")
     recommendations = relationship("Recommendation", back_populates="profile", cascade="all, delete-orphan")
-
+    
 class Product(Base):
     """
     Products - Currently dog food (extensible to multi-niche)
@@ -86,6 +85,7 @@ class Product(Base):
     
     # Phase 1: Pet food specific
     pet_type = Column(String, nullable=False)  # dog, cat
+    product_category = Column(String, nullable=True)  # e.g., dry food, wet food, treats
     
     # JSONB for flexible attributes (Phase 2 ready)
     attributes = Column(JSONB, default=dict)

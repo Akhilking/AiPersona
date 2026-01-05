@@ -53,7 +53,7 @@ async def compare_products(
     db: Session = Depends(get_db)
 ):
     """
-    Compare 2-3 products side-by-side with AI analysis
+    Compare 2-4 products side-by-side with AI analysis
     
     - Shows feature comparison
     - Generates AI summary of which is best for the profile

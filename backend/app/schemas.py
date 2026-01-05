@@ -32,11 +32,19 @@ class ProfileCreate(BaseModel):
 class ProfileUpdate(BaseModel):
     """Update existing profile"""
     name: Optional[str] = Field(None, min_length=1, max_length=100)
-    age_years: Optional[float] = Field(None, ge=0, le=30)
-    weight_lbs: Optional[float] = Field(None, ge=0, le=300)
+    age_years: Optional[float] = Field(None, ge=0, le=120)  # FIXED: Changed from 30 to 120
+    weight_lbs: Optional[float] = Field(None, ge=0, le=500)  # FIXED: Changed from 300 to 500
     allergies: Optional[List[str]] = None
     health_conditions: Optional[List[str]] = None
     preferences: Optional[Dict[str, Any]] = None
+    
+    @field_validator('allergies', 'health_conditions')
+    @classmethod
+    def lowercase_lists(cls, v):
+        # ADDED: Same validation as ProfileCreate
+        if v is None:
+            return v
+        return [item.lower().strip() for item in v if item.strip()]
 
 
 class ProfileResponse(BaseModel):
@@ -74,6 +82,7 @@ class ProductResponse(BaseModel):
     image_url: Optional[str]
     rating: float
     pet_type: str
+    product_category: Optional[str] = None
     attributes: Dict[str, Any]
     is_active: bool
     
@@ -130,7 +139,7 @@ class RecommendationResponse(BaseModel):
 class ComparisonRequest(BaseModel):
     """Request to compare multiple products"""
     profile_id: UUID
-    product_ids: List[UUID] = Field(..., min_length=2, max_length=3, description="2-3 products to compare")
+    product_ids: List[UUID] = Field(..., min_length=2, max_length=4, description="2-4 products to compare")
 
 
 class ComparisonResponse(BaseModel):
@@ -148,9 +157,9 @@ class ComparisonResponse(BaseModel):
 
 class UserRegister(BaseModel):
     """User registration request"""
-    email: str = Field(..., pattern=r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
-    password: str = Field(..., min_length=6)
-    full_name: Optional[str] = None
+    email: str = Field(..., min_length=3, max_length=255)
+    password: str = Field(..., min_length=6, max_length=100)
+    full_name: Optional[str] = Field(None, max_length=255)
 
 
 class UserLogin(BaseModel):
@@ -159,30 +168,23 @@ class UserLogin(BaseModel):
     password: str
 
 
+class Token(BaseModel):
+    """JWT token response"""
+    access_token: str
+    token_type: str = "bearer"
+
+TokenResponse = Token  # Alias for clarity
 class UserResponse(BaseModel):
-    """User response (no password)"""
+    """User profile response"""
     id: UUID
     email: str
     full_name: Optional[str]
-    is_active: bool
     created_at: datetime
     
     class Config:
         from_attributes = True
 
 
-class TokenResponse(BaseModel):
-    """JWT token response"""
-    access_token: str
-    token_type: str = "bearer"
-    user: UserResponse
-    
-# ============================================
-# ERROR SCHEMAS
-# ============================================
-
-class ErrorResponse(BaseModel):
-    """Standard error response"""
-    error: str
-    detail: Optional[str] = None
-    status_code: int
+class TokenData(BaseModel):
+    """JWT token payload"""
+    user_id: Optional[str] = None

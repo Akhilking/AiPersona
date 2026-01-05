@@ -29,23 +29,65 @@ class RecommendationService:
         force_refresh: bool = False
     ) -> RecommendationResponse:
         """
-        Generate personalized product recommendations
+        Generate personalized product recommendations with caching
         
-        1. Load profile
-        2. Get all products
-        3. Filter unsafe products
-        4. Score products
-        5. Generate AI explanations (cached)
-        6. Return top N
+        Uses cached recommended_product_ids to avoid AI calls on every page load.
+        Only generates new recommendations if:
+        1. force_refresh=True
+        2. No cached product IDs exist
+        3. Cache is older than 7 days
         """
         # Get profile
         profile = self.profile_service.get_profile(profile_id)
         if not profile:
             raise ValueError("Profile not found")
         
-        # Get all products for pet type
+        # Check if we can use cached product IDs
+        cache_age_days = 7
+        can_use_cache = (
+            not force_refresh
+            and profile.recommended_product_ids
+            and profile.recommendations_generated_at
+            and (datetime.utcnow() - profile.recommendations_generated_at).days < cache_age_days
+        )
+        
+        if can_use_cache:
+            # Use cached product IDs - NO AI CALLS!
+            print(f"✅ Using cached recommendations for {profile.name} (generated {profile.recommendations_generated_at})")
+            
+            # Get products by cached IDs
+            product_ids = [UUID(pid) for pid in profile.recommended_product_ids[:limit]]
+            recommended_products = self.product_service.get_products_by_ids(product_ids)
+            
+            # Get cached recommendation details (from Recommendation table)
+            recommendation_items = []
+            
+            for product in recommended_products:
+                # Get from cache (already exists)
+                rec_item = await self._get_or_create_recommendation(
+                    profile, 
+                    product,
+                    force_refresh=False  # Use cache
+                )
+                recommendation_items.append(rec_item)
+            
+            # Sort by match score
+            recommendation_items.sort(key=lambda x: x.match_score, reverse=True)
+            
+            return RecommendationResponse(
+                profile=profile,
+                recommendations=recommendation_items,
+                total_safe_products=len(recommended_products),
+                total_filtered_out=0,  # Unknown when using cache
+                generated_at=profile.recommendations_generated_at
+            )
+        
+        # Need to regenerate recommendations
+        print(f"🤖 Generating NEW recommendations for {profile.name} (AI calls required)")
+        
+        # Get all products for category
         all_products = self.product_service.list_products(
-            pet_type=profile.pet_type,
+            pet_type=profile.profile_category,
             limit=100
         )
         
@@ -60,8 +102,10 @@ class RecommendationService:
             else:
                 filtered_out_count += 1
         
-        # Get or generate recommendations
+        # Generate AI recommendations for top products
         recommendation_items = []
+        recommended_ids = []
+        
         for product in safe_products[:limit]:
             rec_item = await self._get_or_create_recommendation(
                 profile, 
@@ -69,9 +113,20 @@ class RecommendationService:
                 force_refresh=force_refresh
             )
             recommendation_items.append(rec_item)
+            recommended_ids.append(str(product.id))
         
         # Sort by match score
         recommendation_items.sort(key=lambda x: x.match_score, reverse=True)
+        
+        # Update sorted IDs based on match score
+        recommended_ids = [str(rec.product.id) for rec in recommendation_items]
+        
+        # 💾 Save recommended product IDs to profile cache
+        profile.recommended_product_ids = recommended_ids
+        profile.recommendations_generated_at = datetime.utcnow()
+        self.db.commit()
+        
+        print(f"💾 Cached {len(recommended_ids)} product IDs for {profile.name}")
         
         return RecommendationResponse(
             profile=profile,
@@ -80,17 +135,16 @@ class RecommendationService:
             total_filtered_out=filtered_out_count,
             generated_at=datetime.utcnow()
         )
-    
     async def compare_products(
         self,
         profile_id: UUID,
         product_ids: List[UUID]
     ) -> ComparisonResponse:
         """
-        Compare 2-3 products with AI analysis
+        Compare 2-4 products with AI analysis
         """
-        if len(product_ids) < 2 or len(product_ids) > 3:
-            raise ValueError("Can only compare 2-3 products")
+        if len(product_ids) < 2 or len(product_ids) > 4:
+            raise ValueError("Can only compare 2-4 products")
         
         # Get profile
         profile = self.profile_service.get_profile(profile_id)
@@ -126,7 +180,7 @@ class RecommendationService:
             best_choice=UUID(comparison_result["best_choice_id"]) if comparison_result["best_choice_id"] else None,
             generated_at=datetime.utcnow()
         )
-    
+        
     async def _get_or_create_recommendation(
         self,
         profile: Profile,
@@ -250,7 +304,8 @@ class RecommendationService:
         return {
             "id": str(profile.id),
             "name": profile.name,
-            "pet_type": profile.pet_type,
+            "profile_category": profile.profile_category,  # 🆕 Add this
+            "pet_type": profile.pet_type or profile.profile_category,  # 🆕 Fallback
             "age_years": profile.age_years,
             "weight_lbs": profile.weight_lbs,
             "size_category": profile.size_category,

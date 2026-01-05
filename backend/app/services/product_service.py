@@ -24,7 +24,8 @@ class ProductService:
     
     def list_products(
         self, 
-        pet_type: Optional[str] = None, 
+        pet_type: Optional[str] = None,
+        product_category: Optional[str] = None,  # ADD THIS
         skip: int = 0, 
         limit: int = 50
     ) -> List[Product]:
@@ -33,6 +34,9 @@ class ProductService:
         
         if pet_type:
             query = query.filter(Product.pet_type == pet_type)
+        
+        if product_category:  # ADD THIS BLOCK
+            query = query.filter(Product.product_category == product_category)
         
         return query.offset(skip).limit(limit).all()
     

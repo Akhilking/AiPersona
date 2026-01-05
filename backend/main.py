@@ -12,11 +12,25 @@ from app.routers import templates
 load_dotenv()
 
 
+from contextlib import asynccontextmanager
+import asyncio
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Initialize database tables on startup"""
-    Base.metadata.create_all(bind=engine)
+    # Startup: Generate product features in background
+    print("🚀 Starting up - generating product features in background...")
+    asyncio.create_task(generate_features_background())
     yield
+    # Shutdown
+    print("👋 Shutting down...")
+
+async def generate_features_background():
+    """Generate features for products that don't have them"""
+    try:
+        from app.scripts.generate_product_features import generate_all_features
+        await generate_all_features()
+    except Exception as e:
+        print(f"⚠️ Background feature generation failed: {e}")
 
 
 app = FastAPI(

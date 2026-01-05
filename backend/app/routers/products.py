@@ -18,7 +18,8 @@ router = APIRouter()
 
 @router.get("/", response_model=List[ProductResponse])
 async def list_products(
-    pet_type: Optional[str] = Query(None, pattern="^(dog|cat)$"),
+    pet_type: Optional[str] = Query(None, pattern="^(dog|cat|baby|human)$"),
+    product_category: Optional[str] = Query(None),  # ADD THIS
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db)
@@ -27,11 +28,12 @@ async def list_products(
     List all products with optional filtering
     
     - **pet_type**: Filter by dog or cat
+    - **product_category**: Filter by product category
     - **skip**: Number of items to skip (pagination)
     - **limit**: Max number of items to return
     """
     service = ProductService(db)
-    return service.list_products(pet_type=pet_type, skip=skip, limit=limit)
+    return service.list_products(pet_type=pet_type, product_category=product_category, skip=skip, limit=limit)
 
 
 @router.get("/{product_id}", response_model=ProductResponse)
@@ -53,3 +55,40 @@ async def search_products(
     """Search products by name or brand"""
     service = ProductService(db)
     return service.search_products(query=query, pet_type=pet_type)
+
+@router.get("/{product_id}/key-features")
+async def get_product_key_features(
+    product_id: UUID, 
+    db: Session = Depends(get_db)
+):
+    """Get AI-generated key features for a product (cached or generate on-demand)"""
+    from app.services.ai_service import AIService
+    
+    service = ProductService(db)
+    product = service.get_product(product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Check if features are already cached in attributes
+    if product.attributes and product.attributes.get('ai_key_features'):
+        return {
+            "product_id": str(product_id),
+            "key_features": product.attributes['ai_key_features'],
+            "cached": True
+        }
+    
+    # Generate on-demand if not cached
+    ai_service = AIService()
+    key_features = await ai_service.generate_product_key_features(product)
+    
+    # Cache for future use
+    if not product.attributes:
+        product.attributes = {}
+    product.attributes['ai_key_features'] = key_features
+    db.commit()
+    
+    return {
+        "product_id": str(product_id),
+        "key_features": key_features,
+        "cached": False
+    }
