@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, AlertCircle, CheckCircle, XCircle, Scale } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle, XCircle, Scale, User, AlertTriangle, Sparkles } from 'lucide-react';
 import { recommendationsAPI } from '../services/api';
 import { useProfileStore, useComparisonStore } from '../store';
 
@@ -23,7 +23,7 @@ export default function Recommendations() {
         return (
             <div className="flex items-center justify-center py-20">
                 <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
-                <span className="ml-3 text-lg text-gray-600">Analyzing products for {currentProfile?.name}...</span>
+                <span className="ml-3 text-lg text-gray-600">AI analyzing products for {currentProfile?.name}...</span>
             </div>
         );
     }
@@ -45,19 +45,74 @@ export default function Recommendations() {
         <div className="max-w-6xl mx-auto">
             {/* Header */}
             <div className="mb-8">
-                <h1 className="text-3xl font-bold mb-2">Recommendations for {currentProfile?.name}</h1>
-                <div className="flex items-center gap-4 text-sm text-gray-600">
-                    <span className="flex items-center gap-1">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
-                        {recommendations.length} safe products
-                    </span>
-                    {totalFiltered > 0 && (
-                        <span className="flex items-center gap-1">
-                            <XCircle className="w-4 h-4 text-red-500" />
-                            {totalFiltered} filtered out (allergies/safety)
-                        </span>
-                    )}
+                <h1 className="text-3xl font-bold mb-2">AI-Powered Recommendations</h1>
+                <p className="text-gray-600">Personalized product selections for your profile</p>
+            </div>
+
+            {/* Profile Context Card */}
+            <div className="card bg-gradient-to-r from-primary-50 to-blue-50 border border-primary-200 mb-6">
+                <div className="flex items-start gap-4">
+                    <div className="bg-primary-100 p-3 rounded-full">
+                        <User className="w-6 h-6 text-primary-700" />
+                    </div>
+                    <div className="flex-1">
+                        <h3 className="font-semibold text-primary-900 mb-2">
+                            Recommendations for: {currentProfile?.name}
+                        </h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                            <div>
+                                <span className="text-gray-600">Type:</span>
+                                <span className="ml-2 font-medium text-gray-900 capitalize">{currentProfile?.pet_type}</span>
+                            </div>
+                            <div>
+                                <span className="text-gray-600">Age:</span>
+                                <span className="ml-2 font-medium text-gray-900">{currentProfile?.age_years} yrs</span>
+                            </div>
+                            <div>
+                                <span className="text-gray-600">Size:</span>
+                                <span className="ml-2 font-medium text-gray-900 capitalize">{currentProfile?.size_category || 'N/A'}</span>
+                            </div>
+                            <div>
+                                <span className="text-gray-600">Weight:</span>
+                                <span className="ml-2 font-medium text-gray-900">{currentProfile?.weight_lbs} lbs</span>
+                            </div>
+                        </div>
+                        {currentProfile?.allergies && currentProfile.allergies.length > 0 && (
+                            <div className="mt-3 flex items-start gap-2 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                                <div className="text-sm">
+                                    <span className="font-medium text-yellow-900">Allergies:</span>
+                                    <span className="ml-2 text-yellow-800">{currentProfile.allergies.join(', ')}</span>
+                                    <span className="ml-2 text-yellow-700">(filtered from results)</span>
+                                </div>
+                            </div>
+                        )}
+                        {currentProfile?.health_conditions && currentProfile.health_conditions.length > 0 && (
+                            <div className="mt-2 text-sm">
+                                <span className="text-gray-600">Health Conditions:</span>
+                                <span className="ml-2 text-gray-900">{currentProfile.health_conditions.join(', ')}</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
+            </div>
+
+            {/* Stats Bar */}
+            <div className="flex items-center gap-4 text-sm text-gray-600 mb-6">
+                <span className="flex items-center gap-1">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    {recommendations.length} safe products
+                </span>
+                {totalFiltered > 0 && (
+                    <span className="flex items-center gap-1">
+                        <XCircle className="w-4 h-4 text-red-500" />
+                        {totalFiltered} filtered out (allergies/safety)
+                    </span>
+                )}
+                <span className="flex items-center gap-1">
+                    <Sparkles className="w-4 h-4 text-purple-500" />
+                    AI-powered match scores
+                </span>
             </div>
 
             {/* Comparison Bar */}
@@ -78,7 +133,7 @@ export default function Recommendations() {
                             disabled={selectedProducts.length < 2}
                             className="btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Compare {selectedProducts.length > 1 && `(${selectedProducts.length})`}
+                            AI Compare {selectedProducts.length > 1 && `(${selectedProducts.length})`}
                         </button>
                     </div>
                 </div>
@@ -96,6 +151,7 @@ export default function Recommendations() {
                         <ProductCard
                             key={rec.product.id}
                             recommendation={rec}
+                            profileName={currentProfile?.name}
                             isSelected={selectedProducts.some(p => p.id === rec.product.id)}
                             onToggleSelect={() => {
                                 if (selectedProducts.some(p => p.id === rec.product.id)) {
@@ -112,18 +168,22 @@ export default function Recommendations() {
     );
 }
 
-function ProductCard({ recommendation, isSelected, onToggleSelect }) {
+function ProductCard({ recommendation, profileName, isSelected, onToggleSelect }) {
     const { product, match_score, explanation, pros, cons } = recommendation;
 
     return (
         <div className={`card hover:shadow-lg transition relative ${isSelected ? 'ring-2 ring-primary-500' : ''}`}>
             {/* Match Score Badge */}
             <div className="absolute top-4 right-4">
-                <div className={`px-3 py-1 rounded-full text-sm font-semibold ${match_score >= 80 ? 'bg-green-100 text-green-700' :
-                        match_score >= 60 ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-gray-100 text-gray-700'
+                <div className={`px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1 ${match_score >= 80 ? 'bg-green-100 text-green-700' :
+                    match_score >= 60 ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-gray-100 text-gray-700'
                     }`}>
-                    {match_score}% Match
+                    <Sparkles className="w-3 h-3" />
+                    {match_score}%
+                </div>
+                <div className="text-xs text-gray-500 text-center mt-1">
+                    AI Match
                 </div>
             </div>
 
@@ -139,8 +199,14 @@ function ProductCard({ recommendation, isSelected, onToggleSelect }) {
                 <span className="text-sm text-gray-600 ml-1">/ {product.price_unit}</span>
             </div>
 
-            {/* Explanation */}
-            <p className="text-sm text-gray-700 mb-4 line-clamp-3">{explanation}</p>
+            {/* AI Explanation */}
+            <div className="mb-4">
+                <div className="flex items-center gap-1 text-xs font-semibold text-primary-700 mb-2">
+                    <Sparkles className="w-3 h-3" />
+                    AI ANALYSIS FOR {profileName?.toUpperCase()}
+                </div>
+                <p className="text-sm text-gray-700 line-clamp-3">{explanation}</p>
+            </div>
 
             {/* Pros */}
             {pros && pros.length > 0 && (
@@ -160,7 +226,7 @@ function ProductCard({ recommendation, isSelected, onToggleSelect }) {
             {/* Cons */}
             {cons && cons.length > 0 && (
                 <div className="mb-4">
-                    <p className="text-xs font-semibold text-gray-600 mb-1">CONSIDERATIONS:</p>
+                    <p className="text-xs font-semibold text-gray-700 mb-1">CONSIDERATIONS:</p>
                     <ul className="text-xs text-gray-600 space-y-1">
                         {cons.slice(0, 2).map((con, i) => (
                             <li key={i} className="flex items-start gap-1">
@@ -172,16 +238,19 @@ function ProductCard({ recommendation, isSelected, onToggleSelect }) {
                 </div>
             )}
 
-            {/* Action Buttons */}
-            <div className="flex gap-2 mt-4">
+            {/* Actions */}
+            <div className="flex gap-2">
                 <button
                     onClick={onToggleSelect}
-                    className={`flex-1 py-2 rounded-lg font-medium text-sm transition ${isSelected
-                            ? 'bg-primary-600 text-white hover:bg-primary-700'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition ${isSelected
+                        ? 'bg-primary-600 text-white hover:bg-primary-700'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                 >
                     {isSelected ? 'Selected' : 'Compare'}
+                </button>
+                <button className="px-3 py-2 text-sm font-medium bg-green-600 text-white rounded-md hover:bg-green-700 transition">
+                    Add to Cart
                 </button>
             </div>
         </div>

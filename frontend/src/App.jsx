@@ -1,14 +1,19 @@
-import { Routes, Route, Navigate,useLocation } from 'react-router-dom';
+// App.jsx - Remove Calculator Route
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore, useProfileStore } from './store';
 import Navbar from './components/Navbar';
 import Login from './pages/Login';
 import Home from './pages/Home';
+import Products from './pages/Products';
+import ProductDetail from './pages/ProductDetail';
+import Cart from './pages/Cart';
 import ProfilesDashboard from './pages/ProfilesDashboard';
 import ProfileTemplateSelector from './pages/ProfileTemplateSelector';
 import ProfileBuilder from './pages/ProfileBuilder';
-import Recommendations from './pages/Recommendations';
 import Comparison from './pages/Comparison';
+import ProfileEdit from './pages/ProfileEdit';
+import ProfileShopping from './pages/ProfileShopping';
 import { useEffect } from 'react';
 
 function App() {
@@ -41,6 +46,18 @@ function App() {
                         <ProtectedRoute><Home /></ProtectedRoute>
                     } />
 
+                    <Route path="/products" element={
+                        <ProtectedRoute><Products /></ProtectedRoute>
+                    } />
+
+                    <Route path="/product/:productId" element={
+                        <ProtectedRoute><ProductDetail /></ProtectedRoute>
+                    } />
+
+                    <Route path="/cart" element={
+                        <ProtectedRoute><Cart /></ProtectedRoute>
+                    } />
+
                     <Route path="/profiles" element={
                         <ProtectedRoute><ProfilesDashboard /></ProtectedRoute>
                     } />
@@ -53,16 +70,22 @@ function App() {
                         <ProtectedRoute><ProfileBuilder /></ProtectedRoute>
                     } />
 
-                    <Route path="/recommendations" element={
-                        <ProtectedRoute>
-                            {currentProfile ? <Recommendations /> : <Navigate to="/profiles" />}
-                        </ProtectedRoute>
+                    <Route path="/profile/edit" element={
+                        <ProtectedRoute><ProfileEdit /></ProtectedRoute>
                     } />
 
                     <Route path="/comparison" element={
                         <ProtectedRoute>
                             {currentProfile ? <Comparison /> : <Navigate to="/profiles" />}
                         </ProtectedRoute>
+                    } />
+
+                    <Route path="/profile/shopping" element={
+                        <ProtectedRoute><ProfileShopping /></ProtectedRoute>
+                    } />
+
+                    <Route path="/recommendations" element={
+                        <Navigate to="/products" replace />
                     } />
                 </Routes>
             </main>

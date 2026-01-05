@@ -60,6 +60,7 @@ export const profilesAPI = {
 export const productsAPI = {
     list: (params = {}) => apiClient.get('/products/', { params }),
     get: (id) => apiClient.get(`/products/${id}`),
+    getKeyFeatures: (id) => apiClient.get(`/products/${id}/key-features`),  // ADD THIS LINE
     search: (query, petType) => apiClient.get('/products/search/', { params: { query, pet_type: petType } }),
 };
 
@@ -77,5 +78,6 @@ export const templatesAPI = {
     getByCategory: (category) => apiClient.get(`/templates/${category}`),
     getPreset: (category, presetId) => apiClient.get(`/templates/${category}/${presetId}`),
 };
+
 
 export default apiClient;

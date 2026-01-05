@@ -22,6 +22,7 @@ export const useAuthStore = create(
                 // Clear localStorage
                 localStorage.removeItem('profile-storage');
                 localStorage.removeItem('auth-storage');
+                localStorage.removeItem('cart-storage');
 
                 set({
                     token: null,
@@ -44,7 +45,7 @@ export const useProfileStore = create(
         (set) => ({
             currentProfile: null,
             profiles: [],
-            userId: null, // Track which user owns these profiles
+            userId: null,
 
             setCurrentProfile: (profile) => set({ currentProfile: profile }),
 
@@ -69,13 +70,15 @@ export const useProfileStore = create(
     )
 );
 
-// Comparison Store
+// Comparison Store - Updated with 4 product limit
 export const useComparisonStore = create((set) => ({
     selectedProducts: [],
 
     addProduct: (product) =>
         set((state) => {
-            if (state.selectedProducts.length >= 3) return state;
+            // Max 4 products
+            if (state.selectedProducts.length >= 4) return state;
+            // No duplicates
             if (state.selectedProducts.find(p => p.id === product.id)) return state;
             return { selectedProducts: [...state.selectedProducts, product] };
         }),
@@ -86,4 +89,74 @@ export const useComparisonStore = create((set) => ({
         })),
 
     clearSelection: () => set({ selectedProducts: [] }),
+
+    isSelected: (productId) => (state) =>
+        state.selectedProducts.some(p => p.id === productId),
 }));
+
+// Cart Store - One cart for all profiles
+export const useCartStore = create(
+    persist(
+        (set, get) => ({
+            items: [], // { product, quantity, profileId, profileName }
+
+            addToCart: (product, profileId, profileName, quantity = 1) =>
+                set((state) => {
+                    const existingIndex = state.items.findIndex(
+                        item => item.product.id === product.id && item.profileId === profileId
+                    );
+
+                    if (existingIndex >= 0) {
+                        const updatedItems = [...state.items];
+                        updatedItems[existingIndex].quantity += quantity;
+                        return { items: updatedItems };
+                    }
+
+                    return {
+                        items: [...state.items, { product, quantity, profileId, profileName }]
+                    };
+                }),
+
+            updateQuantity: (productId, profileId, quantity) =>
+                set((state) => {
+                    if (quantity <= 0) {
+                        return {
+                            items: state.items.filter(
+                                item => !(item.product.id === productId && item.profileId === profileId)
+                            )
+                        };
+                    }
+
+                    return {
+                        items: state.items.map(item =>
+                            item.product.id === productId && item.profileId === profileId
+                                ? { ...item, quantity }
+                                : item
+                        )
+                    };
+                }),
+
+            removeFromCart: (productId, profileId) =>
+                set((state) => ({
+                    items: state.items.filter(
+                        item => !(item.product.id === productId && item.profileId === profileId)
+                    )
+                })),
+
+            clearCart: () => set({ items: [] }),
+
+            getCartTotal: () => {
+                const state = get();
+                return state.items.reduce((total, item) => total + (item.product.price * item.quantity), 0);
+            },
+
+            getCartCount: () => {
+                const state = get();
+                return state.items.reduce((count, item) => count + item.quantity, 0);
+            },
+        }),
+        {
+            name: 'cart-storage',
+        }
+    )
+);

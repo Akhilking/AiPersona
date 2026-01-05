@@ -42,7 +42,12 @@ export default function ProfilesDashboard() {
 
     const handleSelectProfile = (profile) => {
         setCurrentProfile(profile);
-        navigate('/recommendations');
+        navigate('/products');
+    };
+
+    const handleEditProfile = (profile, e) => {
+        e.stopPropagation();
+        navigate('/profile/edit', { state: { profile } });
     };
 
     const handleCreateNew = () => {
@@ -164,10 +169,10 @@ export default function ProfilesDashboard() {
                             </div>
                         </div>
                         <button
-                            onClick={() => navigate('/recommendations')}
+                            onClick={() => navigate('/products')}
                             className="bg-white text-green-600 px-4 py-2 rounded-lg font-semibold hover:bg-green-50 transition"
                         >
-                            View Recommendations →
+                            View Products →
                         </button>
                     </div>
                 </div>
@@ -195,6 +200,7 @@ export default function ProfilesDashboard() {
                             profile={profile}
                             isActive={currentProfile?.id === profile.id}
                             onSelect={() => handleSelectProfile(profile)}
+                            onEdit={(e) => handleEditProfile(profile, e)}
                             onDelete={(e) => handleDelete(profile.id, e)}
                         />
                     ))}
@@ -265,7 +271,7 @@ function StatCard({ label, value, icon: Icon, color }) {
     );
 }
 
-function ProfileCard({ profile, isActive, onSelect, onDelete }) {
+function ProfileCard({ profile, isActive, onSelect, onEdit, onDelete }) {
     const category = profile.profile_category || 'dog';
     const config = CATEGORY_CONFIG[category] || CATEGORY_CONFIG.dog;
     const Icon = config.icon;
@@ -285,19 +291,29 @@ function ProfileCard({ profile, isActive, onSelect, onDelete }) {
         >
             {/* Active Badge */}
             {isActive && (
-                <div className="absolute -top-2 -right-2 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center gap-1">
+                <div className="absolute -top-2 -right-2 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center gap-1 z-10">
                     <Sparkles className="w-3 h-3" />
                     Active
                 </div>
             )}
 
-            {/* Delete Button */}
-            <button
-                onClick={onDelete}
-                className="absolute top-4 right-4 p-2 rounded-full hover:bg-red-50 text-gray-400 hover:text-red-600 transition opacity-0 group-hover:opacity-100"
-            >
-                <Trash2 className="w-4 h-4" />
-            </button>
+            {/* Action Buttons */}
+            <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                    onClick={onEdit}
+                    className="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 transition shadow-md hover:shadow-lg"
+                    title="Edit profile"
+                >
+                    <Edit2 className="w-4 h-4" />
+                </button>
+                <button
+                    onClick={onDelete}
+                    className="p-2 rounded-full bg-red-50 hover:bg-red-100 text-red-600 transition shadow-md hover:shadow-lg"
+                    title="Delete profile"
+                >
+                    <Trash2 className="w-4 h-4" />
+                </button>
+            </div>
 
             <div className="flex items-start gap-4 mb-4">
                 <div className={`w-14 h-14 rounded-xl flex items-center justify-center border-2 ${colorClasses[config.color]}`}>
@@ -362,7 +378,7 @@ function ProfileCard({ profile, isActive, onSelect, onDelete }) {
                     Created {new Date(profile.created_at).toLocaleDateString()}
                 </span>
                 <button className="text-primary-600 font-medium text-sm flex items-center group-hover:translate-x-1 transition">
-                    Get Recommendations
+                    Shop Now
                     <ChevronRight className="w-4 h-4 ml-1" />
                 </button>
             </div>
