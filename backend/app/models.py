@@ -155,46 +155,21 @@ class Recommendation(Base):
     profile = relationship("Profile", back_populates="recommendations")
     product = relationship("Product", back_populates="recommendations")
 
-
-# ============================================
-# FUTURE PHASE 2+ MODELS (commented out)
-# ============================================
-
-"""
-class Niche(Base):
-    __tablename__ = "niches"
+class Wishlist(Base):
+    """User wishlist for favorite products"""
+    __tablename__ = "wishlists"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    slug = Column(String, unique=True, nullable=False)  # pet-food, baby-products
-    name = Column(String, nullable=False)
-    description = Column(Text)
-    icon = Column(String)
-    is_active = Column(Boolean, default=True)
-    priority = Column(Integer, default=0)
-    metadata = Column(JSONB, default=dict)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-
-class ProfileSchema(Base):
-    __tablename__ = "profile_schemas"
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id"), nullable=False)
+    profile_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id"), nullable=True)
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    niche_id = Column(UUID(as_uuid=True), ForeignKey("niches.id"))
-    version = Column(String, default="1.0")
-    schema = Column(JSONB, nullable=False)  # Full form definition
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-
-class FilteringRule(Base):
-    __tablename__ = "filtering_rules"
+    added_at = Column(DateTime, default=datetime.utcnow)
+    notes = Column(Text, nullable=True)  # User notes about why they saved it
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    niche_id = Column(UUID(as_uuid=True), ForeignKey("niches.id"))
-    name = Column(String, nullable=False)
-    rule_type = Column(String)  # exclusion, scoring, boost
-    priority = Column(Integer, default=0)
-    conditions = Column(JSONB, nullable=False)
-    explanation_template = Column(Text)
-    is_active = Column(Boolean, default=True)
-"""
+    # Relationships
+    user = relationship("User")
+    product = relationship("Product")
+    profile = relationship("Profile")
+
+

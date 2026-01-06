@@ -160,3 +160,87 @@ export const useCartStore = create(
         }
     )
 );
+
+// Wishlist Store
+export const useWishlistStore = create(
+    persist(
+        (set, get) => ({
+            items: [], // Array of product IDs in wishlist
+
+            addToWishlist: (productId) =>
+                set((state) => {
+                    const productIdStr = String(productId);
+                    // Check if already exists (compare as strings)
+                    if (state.items.some(id => String(id) === productIdStr)) {
+                        return state;
+                    }
+                    return { items: [...state.items, productIdStr] };
+                }),
+
+            removeFromWishlist: (productId) =>
+                set((state) => {
+                    const productIdStr = String(productId);
+                    return {
+                        items: state.items.filter(id => String(id) !== productIdStr)
+                    };
+                }),
+
+            toggleWishlist: (productId) =>
+                set((state) => {
+                    const productIdStr = String(productId);
+                    if (state.items.some(id => String(id) === productIdStr)) {
+                        return { items: state.items.filter(id => String(id) !== productIdStr) };
+                    }
+                    return { items: [...state.items, productIdStr] };
+                }),
+
+            isInWishlist: (productId) => {
+                const state = get();
+                const productIdStr = String(productId);
+                return state.items.some(id => String(id) === productIdStr);
+            },
+
+            clearWishlist: () => set({ items: [] }),
+        }),
+        {
+            name: 'wishlist-storage',
+        }
+    )
+);
+
+// Recently Viewed Store
+export const useRecentlyViewedStore = create(
+    persist(
+        (set, get) => ({
+            items: [], // { product, viewedAt }
+            maxItems: 20,
+
+            addRecentlyViewed: (product) =>
+                set((state) => {
+                    // Remove if already exists
+                    const filtered = state.items.filter(item => item.product.id !== product.id);
+
+                    // Add to beginning
+                    const newItems = [
+                        { product, viewedAt: new Date().toISOString() },
+                        ...filtered
+                    ];
+
+                    // Keep only maxItems
+                    return {
+                        items: newItems.slice(0, state.maxItems)
+                    };
+                }),
+
+            clearRecentlyViewed: () => set({ items: [] }),
+
+            getRecentItems: (limit = 10) => {
+                const state = get();
+                return state.items.slice(0, limit);
+            }
+        }),
+        {
+            name: 'recently-viewed-storage',
+        }
+    )
+);

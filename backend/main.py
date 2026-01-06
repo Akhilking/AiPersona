@@ -5,9 +5,7 @@ import os
 from dotenv import load_dotenv
 
 from app.database import engine, Base
-from app.routers import profiles, products, recommendations, auth
-from app.routers import templates
-
+from app.routers import profiles, products, recommendations, auth, templates, wishlist  # ADD wishlist
 
 load_dotenv()
 
@@ -55,6 +53,7 @@ app.include_router(templates.router, prefix="/api/templates", tags=["Templates"]
 app.include_router(profiles.router, prefix="/api/profiles", tags=["Profiles"])
 app.include_router(products.router, prefix="/api/products", tags=["Products"])
 app.include_router(recommendations.router, prefix="/api/recommendations", tags=["Recommendations"])
+app.include_router(wishlist.router, prefix="/api/wishlist", tags=["Wishlist"])
 
 
 @app.get("/")

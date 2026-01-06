@@ -15,6 +15,7 @@ import Comparison from './pages/Comparison';
 import ProfileEdit from './pages/ProfileEdit';
 import ProfileShopping from './pages/ProfileShopping';
 import { useEffect } from 'react';
+import Wishlist from './pages/Wishlist';
 
 function App() {
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -87,6 +88,8 @@ function App() {
                     <Route path="/recommendations" element={
                         <Navigate to="/products" replace />
                     } />
+
+                    <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
                 </Routes>
             </main>
         </div>

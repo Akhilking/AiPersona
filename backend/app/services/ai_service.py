@@ -368,14 +368,16 @@ Provide a 3-4 sentence comparison summary explaining which product is the best c
         attributes = product.get("attributes", {})
         ingredients = attributes.get("ingredients", {})
         
-        prompt = f"""Extract 2 key selling features from this {product_type_label}:
+        prompt = f"""Based on this {product_type_label}, write 2 short selling features:
 
 Product: {product['name']} by {product['brand']}
 Description: {product.get('description', 'N/A')}
 Primary Protein: {attributes.get('primary_protein', 'N/A')}
 Key Ingredients: {', '.join(ingredients.get('full_list', [])[:5])}
 
-Provide ONLY 2 concise features (5-8 words each), one per line, no bullets or numbers:"""
+Output format (NO additional text, just the features):
+Feature 1 text here
+Feature 2 text here"""
         
         try:
             if self.provider == "openai":
@@ -411,8 +413,15 @@ Provide ONLY 2 concise features (5-8 words each), one per line, no bullets or nu
                 content = response['message']['content']
             
             # Parse features
-            features = [line.strip().lstrip('-•123456789. ') for line in content.strip().split('\n') if line.strip()]
-            return features[:2]
+            features = [
+            line.strip().lstrip('-•123456789. ') 
+            for line in content.strip().split('\n') 
+            if line.strip() and not any(skip in line.lower() for skip in ['here are', 'feature', 'selling point', 'key point'])
+            ]
+            return features[:2] if features else [
+                f"{product.get('brand', 'Premium')} quality",
+                f"Suitable for {profile_category}s"
+            ]
         
         except Exception as e:
             print(f"AI Error generating features: {str(e)}")

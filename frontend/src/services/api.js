@@ -79,5 +79,12 @@ export const templatesAPI = {
     getPreset: (category, presetId) => apiClient.get(`/templates/${category}/${presetId}`),
 };
 
+export const wishlistAPI = {
+    get: () => apiClient.get('/wishlist/'),
+    add: (productId, profileId = null, notes = null) =>
+        apiClient.post('/wishlist/', { product_id: productId, profile_id: profileId, notes }),
+    remove: (wishlistId) => apiClient.delete(`/wishlist/${wishlistId}`),
+    removeByProduct: (productId) => apiClient.delete(`/wishlist/product/${productId}`),
+};
 
 export default apiClient;
