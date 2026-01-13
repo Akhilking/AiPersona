@@ -50,7 +50,41 @@ const CATEGORY_CONFIGS = {
 
 export default function ProfileShopping() {
     const navigate = useNavigate();
-    const { currentProfile } = useProfileStore();
+    const { currentProfile, setCurrentProfile } = useProfileStore();
+    const user = useAuthStore((state) => state.user);
+
+    // Fetch user's profiles
+    const { data: userProfiles = [], isLoading: profilesLoading } = useQuery({
+        queryKey: ['my-profiles'],
+        queryFn: async () => {
+            const response = await authAPI.getMyProfiles();
+            return response.data;
+        },
+        refetchOnMount: 'always',
+    });
+
+    // Auto-select first profile if none selected
+    useEffect(() => {
+        if (!profilesLoading && userProfiles.length > 0) {
+            const profileStore = useProfileStore.getState();
+
+            // Clear profile if user changed
+            if (profileStore.userId !== user?.id) {
+                profileStore.clearProfile();
+                localStorage.removeItem('profile-storage');
+            }
+
+            // Auto-select latest profile if none selected
+            if (!currentProfile || !userProfiles.some(p => p.id === currentProfile.id)) {
+                const latestProfile = [...userProfiles].sort((a, b) =>
+                    new Date(b.created_at) - new Date(a.created_at)
+                )[0];
+                setCurrentProfile(latestProfile);
+            }
+
+            profileStore.setProfiles(userProfiles, user?.id);
+        }
+    }, [userProfiles, profilesLoading, currentProfile, setCurrentProfile, user]);
 
     // Fetch recommendations to show quick stats
     const { data: recommendationsData } = useQuery({
@@ -63,15 +97,31 @@ export default function ProfileShopping() {
         enabled: !!currentProfile,
     });
 
-    if (!currentProfile) {
+    if (profilesLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading your profiles...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // No profiles - redirect to create
+    if (!profilesLoading && userProfiles.length === 0) {
         return (
             <div className="text-center py-20">
-                <p className="text-gray-600 mb-4">No profile selected</p>
-                <button onClick={() => navigate('/profiles')} className="btn-primary">
-                    Select Profile
+                <p className="text-gray-600 mb-4">Create your first profile to get started</p>
+                <button onClick={() => navigate('/profile/templates')} className="btn-primary">
+                    Create Profile
                 </button>
             </div>
         );
+    }
+
+    if (!currentProfile) {
+        return null; // Will auto-select in useEffect
     }
 
     const profileType = currentProfile.profile_category;

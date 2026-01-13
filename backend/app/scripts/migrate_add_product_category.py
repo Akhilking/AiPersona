@@ -20,7 +20,7 @@ def migrate():
         """))
         
         if result.fetchone():
-            print("✅ Column 'product_category' already exists")
+            print("Column 'product_category' already exists")
             return
         
         # Add the column
@@ -29,10 +29,10 @@ def migrate():
             ADD COLUMN product_category VARCHAR
         """))
         db.commit()
-        print("✅ Successfully added 'product_category' column to products table")
+        print("Successfully added 'product_category' column to products table")
         
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"Error: {e}")
         db.rollback()
     finally:
         db.close()

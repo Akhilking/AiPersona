@@ -101,7 +101,7 @@ export default function Recommendations() {
             <div className="flex items-center gap-4 text-sm text-gray-600 mb-6">
                 <span className="flex items-center gap-1">
                     <CheckCircle className="w-4 h-4 text-green-500" />
-                    {recommendations.length} safe products
+                    {recommendations.length} filtered products
                 </span>
                 {totalFiltered > 0 && (
                     <span className="flex items-center gap-1">

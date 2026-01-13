@@ -1,68 +1,63 @@
 """
-Product Service
+Product Service - Supabase REST API version
 Business logic for product management
 """
 
-from sqlalchemy.orm import Session
-from sqlalchemy import or_
+from typing import List, Optional, Dict
 from uuid import UUID
-from typing import List, Optional
-
-from app.models import Product
 
 
 class ProductService:
-    def __init__(self, db: Session):
-        self.db = db
+    def __init__(self, db):
+        self.db = db  # supabase client
     
-    def get_product(self, product_id: UUID) -> Optional[Product]:
+    def get_product(self, product_id: UUID) -> Optional[Dict]:
         """Get product by ID"""
-        return self.db.query(Product).filter(
-            Product.id == product_id,
-            Product.is_active == True
-        ).first()
+        response = self.db.table('products').select('*').eq('id', str(product_id)).eq('is_active', True).execute()
+        return response.data[0] if response.data else None
     
     def list_products(
         self, 
         pet_type: Optional[str] = None,
-        product_category: Optional[str] = None,  # ADD THIS
+        product_category: Optional[str] = None,
         skip: int = 0, 
         limit: int = 50
-    ) -> List[Product]:
+    ) -> List[Dict]:
         """List products with optional filtering"""
-        query = self.db.query(Product).filter(Product.is_active == True)
+        query = self.db.table('products').select('*').eq('is_active', True)
         
         if pet_type:
-            query = query.filter(Product.pet_type == pet_type)
+            query = query.eq('pet_type', pet_type)
         
-        if product_category:  # ADD THIS BLOCK
-            query = query.filter(Product.product_category == product_category)
+        if product_category:
+            query = query.eq('product_category', product_category)
         
-        return query.offset(skip).limit(limit).all()
+        response = query.range(skip, skip + limit - 1).execute()
+        return response.data
     
     def search_products(
         self, 
         query: str, 
         pet_type: Optional[str] = None
-    ) -> List[Product]:
+    ) -> List[Dict]:
         """Search products by name or brand"""
-        search = f"%{query}%"
-        db_query = self.db.query(Product).filter(
-            Product.is_active == True,
-            or_(
-                Product.name.ilike(search),
-                Product.brand.ilike(search)
-            )
+        response = self.db.table('products').select('*').eq('is_active', True).or_(
+            f'name.ilike.%{query}%,brand.ilike.%{query}%'
         )
         
         if pet_type:
-            db_query = db_query.filter(Product.pet_type == pet_type)
+            response = response.eq('pet_type', pet_type)
         
-        return db_query.limit(20).all()
+        result = response.limit(20).execute()
+        return result.data
     
-    def get_products_by_ids(self, product_ids: List[UUID]) -> List[Product]:
+    def get_products_by_ids(self, product_ids: List[UUID]) -> List[Dict]:
         """Get multiple products by their IDs"""
-        return self.db.query(Product).filter(
-            Product.id.in_(product_ids),
-            Product.is_active == True
-        ).all()
+        str_ids = [str(pid) for pid in product_ids]
+        response = self.db.table('products').select('*').in_('id', str_ids).eq('is_active', True).execute()
+        return response.data
+    
+    def update_product(self, product_id: UUID, data: Dict) -> Optional[Dict]:
+        """Update product"""
+        response = self.db.table('products').update(data).eq('id', str(product_id)).execute()
+        return response.data[0] if response.data else None

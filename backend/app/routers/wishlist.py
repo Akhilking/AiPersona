@@ -1,162 +1,121 @@
 """
-Wishlist API Router
-Handles user wishlists
+Wishlist API Router - Supabase REST API version
 """
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 from uuid import UUID
 
 from app.database import get_db
-from app.models import User, Wishlist, Product
 from app.routers.auth import get_current_user
-from pydantic import BaseModel
+from app.schemas import WishlistResponse, WishlistCreate
 
 router = APIRouter()
 
 
-class WishlistItemCreate(BaseModel):
-    product_id: UUID
-    profile_id: UUID | None = None
-    notes: str | None = None
-
-
-class WishlistItemResponse(BaseModel):
-    id: UUID
-    product_id: UUID
-    profile_id: UUID | None
-    added_at: str
-    notes: str | None
-    product: dict  # ProductResponse
-
-    class Config:
-        from_attributes = True
-
-
-def serialize_product(product):
-    """Convert SQLAlchemy Product to dict"""
-    if not product:
-        return None
-    return {
-        "id": str(product.id),
-        "name": product.name,
-        "brand": product.brand,
-        "description": product.description,
-        "price": product.price,
-        "price_unit": product.price_unit,
-        "image_url": product.image_url,
-        "rating": product.rating,
-        "pet_type": product.pet_type,
-        "product_category": product.product_category,
-        "attributes": product.attributes,
-        "is_active": product.is_active,
-    }
-
-
-@router.get("/", response_model=List[WishlistItemResponse])
+@router.get("/", response_model=List[WishlistResponse])
 async def get_wishlist(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user = Depends(get_current_user),
+    db = Depends(get_db)
 ):
-    """Get current user's wishlist"""
-    items = db.query(Wishlist).filter(Wishlist.user_id == current_user.id).all()
-    
-    # Populate product data
-    result = []
-    for item in items:
-        product = db.query(Product).filter(Product.id == item.product_id).first()
-        result.append({
-            "id": item.id,
-            "product_id": item.product_id,
-            "profile_id": item.profile_id,
-            "added_at": item.added_at.isoformat(),
-            "notes": item.notes,
-            "product": serialize_product(product)
-        })
-    
-    return result
+    """Get user's wishlist with product details"""
+    try:
+        # Fetch wishlist items with product data using Supabase
+        response = db.table('wishlists')\
+            .select('*, product:products(*)')\
+            .eq('user_id', str(current_user['id']))\
+            .execute()
+        
+        return response.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch wishlist: {str(e)}")
 
 
-@router.post("/", response_model=WishlistItemResponse)
+@router.post("/", status_code=status.HTTP_201_CREATED)
 async def add_to_wishlist(
-    item: WishlistItemCreate,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    wishlist_item: WishlistCreate,
+    current_user = Depends(get_current_user),
+    db = Depends(get_db)
 ):
-    """Add product to wishlist"""
-    # Check if already in wishlist
-    existing = db.query(Wishlist).filter(
-        Wishlist.user_id == current_user.id,
-        Wishlist.product_id == item.product_id
-    ).first()
+    """Add a product to wishlist"""
+    try:
+        # Check if already exists
+        existing = db.table('wishlists')\
+            .select('id')\
+            .eq('user_id', str(current_user['id']))\
+            .eq('product_id', str(wishlist_item.product_id))\
+            .execute()
+        
+        if existing.data:
+            raise HTTPException(status_code=400, detail="Product already in wishlist")
+        
+        # Insert new wishlist item
+        data = {
+            'user_id': str(current_user['id']),
+            'product_id': str(wishlist_item.product_id),
+            'profile_id': str(wishlist_item.profile_id) if wishlist_item.profile_id else None,
+            'notes': wishlist_item.notes
+        }
+        
+        result = db.table('wishlists').insert(data).execute()
+        return result.data[0]
     
-    if existing:
-        raise HTTPException(status_code=400, detail="Product already in wishlist")
-    
-    # Verify product exists
-    product = db.query(Product).filter(Product.id == item.product_id).first()
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
-    
-    wishlist_item = Wishlist(
-        user_id=current_user.id,
-        product_id=item.product_id,
-        profile_id=item.profile_id,
-        notes=item.notes
-    )
-    
-    db.add(wishlist_item)
-    db.commit()
-    db.refresh(wishlist_item)
-    
-    return {
-        "id": wishlist_item.id,
-        "product_id": wishlist_item.product_id,
-        "profile_id": wishlist_item.profile_id,
-        "added_at": wishlist_item.added_at.isoformat(),
-        "notes": wishlist_item.notes,
-        "product": serialize_product(product)
-    }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to add to wishlist: {str(e)}")
 
 
 @router.delete("/{wishlist_id}")
 async def remove_from_wishlist(
     wishlist_id: UUID,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user = Depends(get_current_user),
+    db = Depends(get_db)
 ):
-    """Remove product from wishlist"""
-    item = db.query(Wishlist).filter(
-        Wishlist.id == wishlist_id,
-        Wishlist.user_id == current_user.id
-    ).first()
+    """Remove an item from wishlist by wishlist ID"""
+    try:
+        # Verify ownership before deleting
+        existing = db.table('wishlists')\
+            .select('id')\
+            .eq('id', str(wishlist_id))\
+            .eq('user_id', str(current_user['id']))\
+            .execute()
+        
+        if not existing.data:
+            raise HTTPException(status_code=404, detail="Wishlist item not found")
+        
+        # Delete the item
+        db.table('wishlists')\
+            .delete()\
+            .eq('id', str(wishlist_id))\
+            .execute()
+        
+        return {"message": "Item removed from wishlist"}
     
-    if not item:
-        raise HTTPException(status_code=404, detail="Wishlist item not found")
-    
-    db.delete(item)
-    db.commit()
-    
-    return {"message": "Product removed from wishlist"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to remove from wishlist: {str(e)}")
 
 
 @router.delete("/product/{product_id}")
-async def remove_product_from_wishlist(
+async def remove_by_product_id(
     product_id: UUID,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user = Depends(get_current_user),
+    db = Depends(get_db)
 ):
-    """Remove product from wishlist by product ID"""
-    item = db.query(Wishlist).filter(
-        Wishlist.product_id == product_id,
-        Wishlist.user_id == current_user.id
-    ).first()
+    """Remove an item from wishlist by product ID"""
+    try:
+        # Delete by product_id and user_id
+        result = db.table('wishlists')\
+            .delete()\
+            .eq('user_id', str(current_user['id']))\
+            .eq('product_id', str(product_id))\
+            .execute()
+        
+        # Supabase doesn't return deleted count, so we can't verify if something was deleted
+        # Just return success
+        return {"message": "Item removed from wishlist"}
     
-    if not item:
-        raise HTTPException(status_code=404, detail="Product not in wishlist")
-    
-    db.delete(item)
-    db.commit()
-    
-    return {"message": "Product removed from wishlist"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to remove from wishlist: {str(e)}")

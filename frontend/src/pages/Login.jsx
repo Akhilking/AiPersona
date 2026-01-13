@@ -27,7 +27,7 @@ export default function Login() {
             const response = await endpoint(formData);
 
             login(response.data.access_token, response.data.user);
-            navigate('/profiles');
+            navigate('/products');
         } catch (err) {
             setError(err.response?.data?.detail || 'Authentication failed');
         } finally {

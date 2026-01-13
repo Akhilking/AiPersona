@@ -1,10 +1,10 @@
+import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { authAPI, recommendationsAPI, productsAPI, wishlistAPI } from '../services/api';
 import { useProfileStore, useAuthStore, useComparisonStore, useCartStore, useWishlistStore, useRecentlyViewedStore } from '../store';
-import { Dog, Cat, Baby, User, Star, ChevronDown, ChevronUp, ShoppingBag, Filter, X, Scale, Plus, Check, ShoppingCart, Utensils, Package, Droplet, Heart, Shirt, Pill, Share2 } from 'lucide-react';
-import SocialShare from '../components/SocialShare';
+import { Dog, Cat, Baby, User, Star, ChevronDown, ChevronUp, ShoppingBag, Filter, X, Scale, Plus, Check, ShoppingCart, Utensils, Package, Droplet, Heart, Shirt, Pill, Share2, TrendingUp } from 'lucide-react';
 
 const CATEGORY_CONFIG = {
     dog: { icon: Dog, color: 'blue', label: 'Dog' },
@@ -54,11 +54,15 @@ export default function Products() {
     const wishlistItems = useWishlistStore((state) => state.items);
     const addToWishlist = useWishlistStore((state) => state.addToWishlist);
     const removeFromWishlist = useWishlistStore((state) => state.removeFromWishlist);
+    const [showProfileDropdown, setShowProfileDropdown] = useState(false);
     const isInWishlist = (productId) => {
         const productIdStr = String(productId);
         return wishlistItems.some(id => String(id) === productIdStr);
     };
     const { getRecentItems } = useRecentlyViewedStore();
+
+    // View mode state - 'recommended' or 'all'
+    const [viewMode, setViewMode] = useState('recommended');
 
     // Filter states
     const [priceRange, setPriceRange] = useState([0, 100]);
@@ -73,15 +77,8 @@ export default function Products() {
         const syncWishlist = async () => {
             try {
                 const response = await wishlistAPI.get();
-                console.log('✅ Wishlist sync response:', response.data);
-
-                // Extract product IDs from backend
                 const backendWishlistIds = response.data.map(item => item.product_id);
-
-                // Update local store to match backend (single source of truth)
                 useWishlistStore.setState({ items: backendWishlistIds });
-
-                console.log('✅ Synced wishlist IDs:', backendWishlistIds);
             } catch (error) {
                 console.error('❌ Failed to sync wishlist:', error);
             }
@@ -91,7 +88,6 @@ export default function Products() {
             syncWishlist();
         }
     }, [user]);
-
 
     // Update category from URL changes
     useEffect(() => {
@@ -131,6 +127,17 @@ export default function Products() {
         }
     }, [userProfiles, profilesLoading, currentProfile, setCurrentProfile, user]);
 
+    // Fetch AI Recommendations
+    const { data: recommendationsData, isLoading: recommendationsLoading } = useQuery({
+        queryKey: ['recommendations', currentProfile?.id],
+        queryFn: async () => {
+            const response = await recommendationsAPI.get(currentProfile.id, 50);
+            return response.data;
+        },
+        enabled: !!currentProfile && viewMode === 'recommended',
+        staleTime: 5 * 60 * 1000,
+    });
+
     // Fetch ALL products
     const { data: productsData = [], isLoading: productsLoading, error: productsError } = useQuery({
         queryKey: ['all-products', currentProfile?.profile_category],
@@ -146,7 +153,7 @@ export default function Products() {
                 throw error;
             }
         },
-        enabled: !!currentProfile,
+        enabled: !!currentProfile && viewMode === 'all',
         retry: 1,
         staleTime: 5 * 60 * 1000,
     });
@@ -166,12 +173,15 @@ export default function Products() {
         );
     }
 
-    const allProducts = productsData || [];
-    const profileFilteredProducts = allProducts;
-    const allBrands = [...new Set(profileFilteredProducts.map(p => p.brand))].sort();
+    // Get products based on view mode
+    const baseProducts = viewMode === 'recommended'
+        ? (recommendationsData?.recommendations?.map(rec => rec.product) || [])
+        : (productsData || []);
 
-    // Apply additional filters including sub-category
-    const filteredProducts = profileFilteredProducts.filter(product => {
+    const allBrands = [...new Set(baseProducts.map(p => p.brand))].sort();
+
+    // Apply filters
+    const filteredProducts = baseProducts.filter(product => {
         if (selectedCategory !== 'all' && product.product_category !== selectedCategory) return false;
         if (product.price < priceRange[0] || product.price > priceRange[1]) return false;
         if (selectedBrands.length > 0 && !selectedBrands.includes(product.brand)) return false;
@@ -222,38 +232,34 @@ export default function Products() {
     const handleWishlistToggle = async (product, e) => {
         e.stopPropagation();
 
-        try {
-            const inWishlist = isInWishlist(product.id);
+        const inWishlist = isInWishlist(product.id);
 
+        // Optimistic UI update - change immediately
+        if (inWishlist) {
+            removeFromWishlist(product.id);
+        } else {
+            addToWishlist(product.id);
+        }
+
+        // Then sync with backend
+        try {
             if (inWishlist) {
-                // Remove from backend - catch 404 errors gracefully
-                try {
-                    await wishlistAPI.removeByProduct(product.id);
-                } catch (error) {
-                    // If 404, item doesn't exist in backend anyway
-                    if (error.response?.status !== 404) {
-                        throw error;
-                    }
-                    console.log('⚠️ Item not in backend wishlist, removing from local store');
-                }
-                // Remove from local store
-                removeFromWishlist(product.id);
+                await wishlistAPI.removeByProduct(product.id);
             } else {
-                // Add to backend first
-                try {
-                    await wishlistAPI.add(product.id, currentProfile?.id);
-                    addToWishlist(product.id);
-                } catch (error) {
-                    if (error.response?.status === 400) {
-                        console.log('⚠️ Item already in backend, adding to local store');
-                        addToWishlist(product.id);
-                    } else {
-                        throw error;
-                    }
-                }
+                await wishlistAPI.add(product.id, currentProfile?.id);
             }
         } catch (error) {
             console.error('❌ Wishlist error:', error);
+
+            // Revert on error (rollback)
+            if (inWishlist) {
+                addToWishlist(product.id);
+            } else {
+                removeFromWishlist(product.id);
+            }
+
+            // Show error toast (optional)
+            alert('Failed to update wishlist. Please try again.');
         }
     };
 
@@ -264,12 +270,12 @@ export default function Products() {
     }
 
     // Loading state
-    if (profilesLoading || productsLoading) {
+    if (profilesLoading || (viewMode === 'recommended' ? recommendationsLoading : productsLoading)) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading your profiles...</p>
+                    <p className="text-gray-600">Loading products...</p>
                 </div>
             </div>
         );
@@ -277,94 +283,123 @@ export default function Products() {
 
     return (
         <div className="max-w-screen-2xl mx-auto -mx-4">
+
+            {/* Compact Sticky Header - Blue Theme */}
             {currentProfile && (
-                <div className="bg-white border-b border-gray-200 px-6 py-3 mb-0 sticky top-16 z-10 shadow-sm">
-                    <div className="flex items-center justify-between max-w-screen-2xl mx-auto flex-wrap gap-3">
-                        <div className="flex items-center gap-3 flex-wrap">
-                            <ShoppingBag className="w-5 h-5 text-primary-600" />
-                            <span className="text-sm text-gray-600">Shopping for</span>
-                            <span className="font-bold text-gray-900">{currentProfile.name}</span>
-                            {currentProfile.allergies?.length > 0 && (
-                                <span className="px-2 py-1 bg-red-50 text-red-700 rounded text-xs font-medium">
-                                    {currentProfile.allergies.length} allergie(s) filtered
-                                </span>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-3 flex-wrap">
-                            {/* Social Share */}
-                            <SocialShare
-                                title={`AI-Powered Products for ${currentProfile.name}`}
-                                description={`Check out personalized ${currentProfile.profile_category} product recommendations!`}
-                            />
+                <div className="bg-gradient-to-r from-primary-600 to-primary-700 sticky top-16 z-20 shadow-lg">
+                    <div className="max-w-screen-2xl mx-auto px-6">
+                        {/* Main Bar - Reordered Layout */}
+                        <div className="flex items-center justify-between gap-4 py-2.5">
+                            {/* Left: Profile + Category Tabs */}
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                                {/* Profile Selector */}
+                                <div className="relative group flex-shrink-0">
+                                    <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 transition border border-white/20">
+                                        <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white">
+                                            {CATEGORY_CONFIG[currentProfile.profile_category] &&
+                                                React.createElement(CATEGORY_CONFIG[currentProfile.profile_category].icon, { className: 'w-4 h-4' })
+                                            }
+                                        </div>
+                                        <span className="text-white font-semibold text-sm">{currentProfile.name}</span>
+                                        <ChevronDown className="w-3.5 h-3.5 text-white/70" />
+                                    </button>
 
-                            {/* Compare Icon */}
-                            <button
-                                onClick={handleCompareClick}
-                                disabled={selectedProducts.length < 2}
-                                className={`relative flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${selectedProducts.length >= 2
-                                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                    }`}
-                                title={`Compare ${selectedProducts.length} products`}
-                            >
-                                <Scale className="w-5 h-5" />
-                                <span className="hidden sm:inline">Compare</span>
-                                {selectedProducts.length > 0 && (
-                                    <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
-                                        {selectedProducts.length}
-                                    </span>
+                                    {/* Dropdown */}
+                                    <div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-2xl border border-gray-200 min-w-[260px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[100]">
+                                        <div className="p-2">
+                                            <div className="px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase">Switch Profile</div>
+                                            {userProfiles.map((profile) => (
+                                                <button
+                                                    key={profile.id}
+                                                    onClick={() => setCurrentProfile(profile)}
+                                                    className={`w-full text-left px-3 py-2 rounded-md hover:bg-gray-50 transition flex items-center gap-2.5 ${currentProfile.id === profile.id ? 'bg-primary-50' : ''
+                                                        }`}
+                                                >
+                                                    <div className={`w-7 h-7 rounded-full flex items-center justify-center ${currentProfile.id === profile.id
+                                                        ? 'bg-primary-600 text-white'
+                                                        : 'bg-gray-100 text-gray-600'
+                                                        }`}>
+                                                        {CATEGORY_CONFIG[profile.profile_category] &&
+                                                            React.createElement(CATEGORY_CONFIG[profile.profile_category].icon, { className: 'w-3.5 h-3.5' })
+                                                        }
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className={`font-medium text-sm truncate ${currentProfile.id === profile.id ? 'text-primary-700' : 'text-gray-900'}`}>
+                                                            {profile.name}
+                                                        </div>
+                                                        <div className="text-xs text-gray-500 capitalize">{profile.profile_category}</div>
+                                                    </div>
+                                                    {currentProfile.id === profile.id && <Check className="w-4 h-4 text-primary-600 flex-shrink-0" />}
+                                                </button>
+                                            ))}
+                                            <div className="border-t border-gray-100 mt-1.5 pt-1.5">
+                                                <button
+                                                    onClick={() => navigate('/profile/templates')}
+                                                    className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-50 transition flex items-center gap-2.5 text-primary-600 font-medium"
+                                                >
+                                                    <div className="w-7 h-7 rounded-full bg-primary-50 flex items-center justify-center">
+                                                        <Plus className="w-3.5 h-3.5" />
+                                                    </div>
+                                                    <span className="text-sm">New Profile</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Category Tabs - Right Next to Profile */}
+                                {SUB_CATEGORY_CONFIGS[currentProfile.profile_category] && (
+                                    <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+                                        {SUB_CATEGORY_CONFIGS[currentProfile.profile_category].map((cat) => {
+                                            const CategoryIcon = cat.icon;
+                                            return (
+                                                <button
+                                                    key={cat.id}
+                                                    onClick={() => handleCategoryChange(cat.id)}
+                                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition-all whitespace-nowrap text-sm ${selectedCategory === cat.id
+                                                        ? 'bg-white text-primary-700 shadow-md'
+                                                        : 'bg-white/10 text-white/90 hover:bg-white/20 border border-white/20'
+                                                        }`}
+                                                >
+                                                    <CategoryIcon className="w-3.5 h-3.5" />
+                                                    <span>{cat.name}</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
                                 )}
-                            </button>
+                            </div>
 
-                            {/* Cart Icon */}
-                            <button
-                                onClick={() => navigate('/cart')}
-                                className="relative flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition"
-                            >
-                                <ShoppingCart className="w-5 h-5" />
-                                <span className="hidden sm:inline">Cart</span>
-                                {cartCount > 0 && (
-                                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
-                                        {cartCount}
-                                    </span>
-                                )}
-                            </button>
-
-                            <button
-                                onClick={() => navigate('/profiles')}
-                                className="text-sm text-primary-600 hover:text-primary-700 font-medium whitespace-nowrap"
-                            >
-                                Change Profile
-                            </button>
+                            {/* Right: View Toggle + Compare */}
+                            <div className="flex items-center gap-3 flex-shrink-0">
+                                {/* View Toggle */}
+                                <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm p-1 rounded-lg border border-white/20">
+                                    <button
+                                        onClick={() => setViewMode('recommended')}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-semibold transition-all ${viewMode === 'recommended'
+                                            ? 'bg-white text-primary-700 shadow-md'
+                                            : 'text-white/90 hover:bg-white/10'
+                                            }`}
+                                    >
+                                        <TrendingUp className="w-4 h-4" />
+                                        <span>AI Picks</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('all')}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-semibold transition-all ${viewMode === 'all'
+                                            ? 'bg-white text-primary-700 shadow-md'
+                                            : 'text-white/90 hover:bg-white/10'
+                                            }`}
+                                    >
+                                        <ShoppingBag className="w-4 h-4" />
+                                        <span>Browse All</span>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
-
-            {/* Sub-Category Tabs */}
-            {currentProfile && SUB_CATEGORY_CONFIGS[currentProfile.profile_category] && (
-                <div className="bg-white border-b border-gray-200 px-6 py-3 mb-0 sticky top-28 z-10 shadow-sm overflow-x-auto">
-                    <div className="flex items-center gap-2 max-w-screen-2xl mx-auto">
-                        {SUB_CATEGORY_CONFIGS[currentProfile.profile_category].map((cat) => {
-                            const CategoryIcon = cat.icon;
-                            return (
-                                <button
-                                    key={cat.id}
-                                    onClick={() => handleCategoryChange(cat.id)}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition whitespace-nowrap ${selectedCategory === cat.id
-                                        ? 'bg-blue-600 text-white shadow-md'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                        }`}
-                                >
-                                    <CategoryIcon className="w-4 h-4" />
-                                    <span>{cat.name}</span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
-
             {/* Floating Comparison Bar */}
             {selectedProducts.length > 0 && (
                 <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 animate-slide-up max-w-5xl px-4">
@@ -414,7 +449,7 @@ export default function Products() {
             <div className="flex gap-0">
                 {/* Sidebar Filters */}
                 <aside className={`w-56 flex-shrink-0 bg-white border-r border-gray-200 ${showFilters ? '' : 'hidden'}`}>
-                    <div className="sticky top-40 p-4 max-h-[calc(100vh-10rem)] overflow-y-auto">
+                    <div className="sticky top-40 p-4 max-h-[calc(100vh-14rem)] overflow-y-auto">
                         <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
                             <div className="flex items-center gap-2">
                                 <Filter className="w-4 h-4 text-gray-600" />
@@ -494,27 +529,6 @@ export default function Products() {
 
                 {/* Main Content */}
                 <main className="flex-1 px-6 py-4 bg-gray-50">
-                    {/* Results Header */}
-                    <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-                        <div>
-                            <h1 className="text-2xl font-bold text-gray-900">
-                                Recommended for {currentProfile?.name}
-                            </h1>
-                            <p className="text-sm text-gray-600 mt-1">
-                                {filteredProducts.length} of {allProducts.length} products
-                                {selectedCategory !== 'all' && ` • ${selectedCategory}`}
-                                {selectedBrands.length > 0 && ` • ${selectedBrands.length} brand(s)`}
-                            </p>
-                        </div>
-                        <button
-                            onClick={() => setShowFilters(!showFilters)}
-                            className="lg:hidden btn-secondary flex items-center gap-2"
-                        >
-                            <Filter className="w-4 h-4" />
-                            {showFilters ? 'Hide' : 'Show'}
-                        </button>
-                    </div>
-
                     {/* Recently Viewed Section */}
                     {recentlyViewed.length > 0 && (
                         <div className="mb-8">
@@ -544,17 +558,7 @@ export default function Products() {
                     )}
 
                     {/* Products Grid */}
-                    {productsLoading ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {[...Array(9)].map((_, i) => (
-                                <div key={i} className="bg-white rounded-lg shadow p-4 animate-pulse">
-                                    <div className="bg-gray-200 h-48 rounded mb-4"></div>
-                                    <div className="bg-gray-200 h-4 rounded mb-2"></div>
-                                    <div className="bg-gray-200 h-4 rounded w-2/3"></div>
-                                </div>
-                            ))}
-                        </div>
-                    ) : filteredProducts.length > 0 ? (
+                    {filteredProducts.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {filteredProducts.map((product) => (
                                 <ProductCard
@@ -683,7 +687,6 @@ function ProductCard({ product, profile, onCompare, isSelected, isMaxReached, is
                 <Heart className={`w-5 h-5 ${isInWishlist ? 'fill-current' : ''}`} />
             </button>
 
-            {/* Compare Checkbox - Top Left */}
             <button
                 onClick={(e) => {
                     e.stopPropagation();
@@ -703,7 +706,6 @@ function ProductCard({ product, profile, onCompare, isSelected, isMaxReached, is
                 {isSelected ? <Check className="w-4 h-4" /> : <Scale className="w-3 h-3" />}
             </button>
 
-            {/* Image */}
             <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 h-48 flex items-center justify-center overflow-hidden">
                 {product.image_url ? (
                     <img
@@ -717,7 +719,6 @@ function ProductCard({ product, profile, onCompare, isSelected, isMaxReached, is
                 <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </div>
 
-            {/* Content */}
             <div className="p-3 flex flex-col h-[calc(100%-12rem)]">
                 <div className="mb-1.5">
                     <span className="inline-block px-2 py-0.5 bg-primary-50 text-primary-700 text-xs font-bold rounded-full">

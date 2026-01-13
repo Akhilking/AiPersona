@@ -1,18 +1,14 @@
 """
-Authentication Service
-Handles user registration, login, and JWT tokens
+Authentication Service - Supabase REST API version
 """
 
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Dict
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from sqlalchemy.orm import Session
 from uuid import UUID
 import os
-
-from app.models import User
-from app.schemas import UserRegister
+import uuid as uuid_lib
 
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
 ALGORITHM = "HS256"
@@ -22,22 +18,19 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class AuthService:
-    def __init__(self, db: Session):
-        self.db = db
+    def __init__(self, db):
+        self.db = db  # supabase client
     
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
-        """Verify a password against a hash"""
         return pwd_context.verify(plain_password, hashed_password)
     
     @staticmethod
     def get_password_hash(password: str) -> str:
-        """Hash a password"""
         return pwd_context.hash(password)
     
     @staticmethod
     def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-        """Create JWT token"""
         to_encode = data.copy()
         if expires_delta:
             expire = datetime.utcnow() + expires_delta
@@ -48,41 +41,41 @@ class AuthService:
         encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
         return encoded_jwt
     
-    def register_user(self, user_data: UserRegister) -> User:
-        """Register a new user"""
+    def register_user(self, user_data) -> Dict:
         # Check if user exists
-        existing = self.db.query(User).filter(User.email == user_data.email).first()
-        if existing:
+        existing = self.db.table('users').select('*').eq('email', user_data.email).execute()
+        if existing.data:
             raise ValueError("Email already registered")
         
         # Create user
-        user = User(
-            email=user_data.email,
-            full_name=user_data.full_name,
-            hashed_password=self.get_password_hash(user_data.password)
-        )
+        user = {
+            "id": str(uuid_lib.uuid4()),
+            "email": user_data.email,
+            "full_name": user_data.full_name,
+            "hashed_password": self.get_password_hash(user_data.password),
+            "is_active": True,
+            "created_at": datetime.utcnow().isoformat()
+        }
         
-        self.db.add(user)
-        self.db.commit()
-        self.db.refresh(user)
+        response = self.db.table('users').insert(user).execute()
+        return response.data[0] if response.data else None
+    
+    def authenticate_user(self, email: str, password: str) -> Optional[Dict]:
+        response = self.db.table('users').select('*').eq('email', email).execute()
+        if not response.data:
+            return None
+        
+        user = response.data[0]
+        if not self.verify_password(password, user['hashed_password']):
+            return None
         return user
     
-    def authenticate_user(self, email: str, password: str) -> Optional[User]:
-        """Authenticate user credentials"""
-        user = self.db.query(User).filter(User.email == email).first()
-        if not user:
-            return None
-        if not self.verify_password(password, user.hashed_password):
-            return None
-        return user
-    
-    def get_user_by_id(self, user_id: UUID) -> Optional[User]:
-        """Get user by ID"""
-        return self.db.query(User).filter(User.id == user_id).first()
+    def get_user_by_id(self, user_id: UUID) -> Optional[Dict]:
+        response = self.db.table('users').select('*').eq('id', str(user_id)).execute()
+        return response.data[0] if response.data else None
     
     @staticmethod
     def decode_token(token: str) -> Optional[dict]:
-        """Decode and validate JWT token"""
         try:
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
             return payload

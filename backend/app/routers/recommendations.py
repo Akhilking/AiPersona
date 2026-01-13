@@ -1,10 +1,8 @@
 """
-Recommendations API Router
-Handles AI-powered product recommendations and comparisons
+Recommendations API Router - Supabase REST API version
 """
 
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
-from sqlalchemy.orm import Session
 from uuid import UUID
 
 from app.database import get_db
@@ -23,7 +21,7 @@ router = APIRouter()
 async def get_recommendations(
     request: RecommendationRequest,
     background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db)
+    db = Depends(get_db)
 ):
     """
     Get personalized product recommendations for a profile
@@ -50,7 +48,7 @@ async def get_recommendations(
 @router.post("/compare", response_model=ComparisonResponse)
 async def compare_products(
     request: ComparisonRequest,
-    db: Session = Depends(get_db)
+    db = Depends(get_db)
 ):
     """
     Compare 2-4 products side-by-side with AI analysis

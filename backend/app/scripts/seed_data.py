@@ -3,18 +3,19 @@ Comprehensive Seed Database with Realistic Products for All Categories
 Run with: python -m app.scripts.seed_data
 """
 
-from app.database import SessionLocal
-from app.models import Product, Recommendation
+from app.database import supabase
+import uuid
+from datetime import datetime
 
 
 def seed_products():
     """Add realistic products across all categories with sub-categories"""
-    db = SessionLocal()
     
     # ============= DOG PRODUCTS (15) =============
     dog_products = [
-        # Food (10 products - keeping existing ones)
+        # Dog Food (5 products)
         {
+            "id": str(uuid.uuid4()),
             "name": "Life Protection Formula Chicken & Brown Rice",
             "brand": "Blue Buffalo",
             "description": "Real chicken, wholesome grains, and LifeSource Bits with antioxidants for adult dogs.",
@@ -39,13 +40,110 @@ def seed_products():
                     "fiber_pct": 5,
                     "calories_per_cup": 377
                 }
-            }
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
         },
-        # Toys (3 new products)
         {
+            "id": str(uuid.uuid4()),
+            "name": "Taste of the Wild High Prairie",
+            "brand": "Taste of the Wild",
+            "description": "Grain-free formula with roasted bison and venison. High protein for active dogs.",
+            "price": 52.99,
+            "price_unit": "28 lb bag",
+            "image_url": "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=500&h=500&fit=crop",
+            "rating": 4.8,
+            "pet_type": "dog",
+            "product_category": "food",
+            "attributes": {
+                "life_stage": ["adult"],
+                "size_suitability": ["medium", "large"],
+                "primary_protein": "bison",
+                "grain_free": True,
+                "nutrition": {
+                    "protein_pct": 32,
+                    "fat_pct": 18,
+                    "calories_per_cup": 370
+                }
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Purina Pro Plan Puppy Formula",
+            "brand": "Purina Pro Plan",
+            "description": "DHA from omega-rich fish oil for brain development. Chicken as #1 ingredient.",
+            "price": 47.98,
+            "price_unit": "34 lb bag",
+            "image_url": "https://images.unsplash.com/photo-1623387641168-d9803ddd3f35?w=500&h=500&fit=crop",
+            "rating": 4.6,
+            "pet_type": "dog",
+            "product_category": "food",
+            "attributes": {
+                "life_stage": ["puppy"],
+                "size_suitability": ["all_sizes"],
+                "primary_protein": "chicken",
+                "grain_free": False,
+                "nutrition": {
+                    "protein_pct": 28,
+                    "fat_pct": 17,
+                    "DHA": True
+                }
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Hill's Science Diet Senior 7+",
+            "brand": "Hill's Science Diet",
+            "description": "Easy to digest formula for older dogs. Supports healthy brain, kidneys, and joints.",
+            "price": 59.99,
+            "price_unit": "30 lb bag",
+            "image_url": "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=500&h=500&fit=crop",
+            "rating": 4.7,
+            "pet_type": "dog",
+            "product_category": "food",
+            "attributes": {
+                "life_stage": ["senior"],
+                "size_suitability": ["all_sizes"],
+                "primary_protein": "chicken",
+                "special_diet": ["senior", "joint_support"]
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Royal Canin Small Breed Adult",
+            "brand": "Royal Canin",
+            "description": "Precise nutrition for small dogs. Supports dental health and skin/coat.",
+            "price": 44.99,
+            "price_unit": "13 lb bag",
+            "image_url": "https://images.unsplash.com/photo-1530281700549-e82e7bf110d6?w=500&h=500&fit=crop",
+            "rating": 4.5,
+            "pet_type": "dog",
+            "product_category": "food",
+            "attributes": {
+                "life_stage": ["adult"],
+                "size_suitability": ["small"],
+                "primary_protein": "chicken",
+                "nutrition": {
+                    "protein_pct": 25,
+                    "fat_pct": 16
+                }
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        
+        # Dog Toys (5 products)
+        {
+            "id": str(uuid.uuid4()),
             "name": "KONG Classic Dog Toy",
             "brand": "KONG",
-            "description": "Durable rubber toy for chewing, treating, and playing. Recommended by veterinarians and trainers worldwide.",
+            "description": "Durable rubber toy for chewing, treating, and playing. Recommended by veterinarians worldwide.",
             "price": 13.99,
             "price_unit": "Large",
             "image_url": "https://images.unsplash.com/photo-1535930891776-0c2dfb7fda1a?w=500&h=500&fit=crop",
@@ -55,14 +153,17 @@ def seed_products():
             "attributes": {
                 "size_suitability": ["medium", "large"],
                 "material": "natural rubber",
-                "features": ["dishwasher safe", "made in USA", "can stuff with treats"],
+                "features": ["dishwasher safe", "made in USA", "treat dispenser"],
                 "durability": "heavy duty"
-            }
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
         },
         {
+            "id": str(uuid.uuid4()),
             "name": "Chuckit! Ultra Ball",
             "brand": "Chuckit!",
-            "description": "High-bounce rubber ball designed for the most demanding use. Fits Chuckit! launchers.",
+            "description": "High-bounce rubber ball for fetch. Floats in water and is bright orange for visibility.",
             "price": 9.99,
             "price_unit": "2-pack Medium",
             "image_url": "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=500&h=500&fit=crop",
@@ -70,16 +171,19 @@ def seed_products():
             "pet_type": "dog",
             "product_category": "toys",
             "attributes": {
-                "size_suitability": ["small", "medium", "large"],
+                "size_suitability": ["all_sizes"],
                 "material": "rubber",
                 "features": ["high bounce", "floats", "bright colors"],
                 "activity": "fetch"
-            }
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
         },
         {
+            "id": str(uuid.uuid4()),
             "name": "Outward Hound Hide-A-Squirrel Puzzle Toy",
             "brand": "Outward Hound",
-            "description": "Interactive puzzle plush toy that keeps dogs busy and engaged. Comes with squeaky squirrels.",
+            "description": "Interactive puzzle plush toy. Includes 4 squeaky squirrels that hide in a tree trunk.",
             "price": 15.99,
             "price_unit": "Large",
             "image_url": "https://images.unsplash.com/photo-1623387641168-d9803ddd3f35?w=500&h=500&fit=crop",
@@ -90,615 +194,1050 @@ def seed_products():
                 "size_suitability": ["all_sizes"],
                 "type": "puzzle toy",
                 "features": ["mental stimulation", "squeakers", "machine washable"],
-                "pieces": "4 squirrels included"
-            }
+                "pieces": 4
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
         },
-        # Grooming (2 new products)
         {
+            "id": str(uuid.uuid4()),
+            "name": "BeneB one Wishbone Dog Chew Toy",
+            "brand": "Benebone",
+            "description": "Real bacon flavor infused throughout. Made in USA with nylon and real bacon.",
+            "price": 11.99,
+            "price_unit": "Medium",
+            "image_url": "https://images.unsplash.com/photo-1561212044-bac5ef688a07?w=500&h=500&fit=crop",
+            "rating": 4.7,
+            "pet_type": "dog",
+            "product_category": "toys",
+            "attributes": {
+                "size_suitability": ["medium", "large"],
+                "material": "nylon",
+                "flavor": "bacon",
+                "durability": "extreme"
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Rope Tug Toy 3-Pack",
+            "brand": "Mammoth Pet",
+            "description": "Cotton rope toys for tug-of-war and fetch. Helps clean teeth during play.",
+            "price": 14.99,
+            "price_unit": "3-pack",
+            "image_url": "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=500&h=500&fit=crop",
+            "rating": 4.5,
+            "pet_type": "dog",
+            "product_category": "toys",
+            "attributes": {
+                "size_suitability": ["all_sizes"],
+                "material": "cotton rope",
+                "features": ["dental health", "interactive play"],
+                "quantity": 3
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        
+        # Dog Grooming (3 products)
+        {
+            "id": str(uuid.uuid4()),
             "name": "FURminator deShedding Tool",
             "brand": "FURminator",
-            "description": "Reduces shedding up to 90%. Reaches beneath topcoat to remove loose hair and undercoat.",
+            "description": "Reduces shedding up to 90%. Reaches beneath topcoat to remove loose undercoat hair.",
             "price": 39.99,
-            "price_unit": "Large Dog - Short Hair",
-            "image_url": "https://images.unsplash.com/photo-1544568100-847a948585b9?w=500&h=500&fit=crop",
-            "rating": 4.7,
+            "price_unit": "Large Long Hair",
+            "image_url": "https://images.unsplash.com/photo-1560807707-8cc77767d783?w=500&h=500&fit=crop",
+            "rating": 4.8,
             "pet_type": "dog",
             "product_category": "grooming",
             "attributes": {
                 "size_suitability": ["large"],
-                "coat_type": "short hair",
-                "features": ["stainless steel edge", "ergonomic handle", "FURejector button"],
-                "use": "weekly brushing"
-            }
+                "coat_type": "long_hair",
+                "features": ["ejector button", "ergonomic handle"]
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
         },
         {
-            "name": "Earthbath Oatmeal & Aloe Pet Shampoo",
+            "id": str(uuid.uuid4()),
+            "name": "Earthbath Oatmeal & Aloe Dog Shampoo",
             "brand": "Earthbath",
-            "description": "Soap-free shampoo for dogs with itchy, dry skin. pH-balanced and gentle.",
-            "price": 16.99,
+            "description": "Soap-free formula with colloidal oatmeal and organic aloe vera for sensitive skin.",
+            "price": 15.99,
             "price_unit": "16 oz",
-            "image_url": "https://images.unsplash.com/photo-1600077106724-946750eeaf8c?w=500&h=500&fit=crop",
-            "rating": 4.6,
+            "image_url": "https://images.unsplash.com/photo-1591856419428-e67b77e82909?w=500&h=500&fit=crop",
+            "rating": 4.7,
             "pet_type": "dog",
             "product_category": "grooming",
             "attributes": {
-                "skin_type": ["sensitive", "dry", "itchy"],
-                "key_ingredients": ["colloidal oatmeal", "aloe vera", "vitamin E"],
-                "features": ["soap-free", "pH-balanced", "vanilla & almond scent"],
-                "safe_for": "puppies 6+ weeks"
-            }
+                "skin_type": "sensitive",
+                "scent": "vanilla_almond",
+                "features": ["pH balanced", "biodegradable", "soap-free"]
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Safari Professional Nail Trimmer",
+            "brand": "Safari",
+            "description": "Precision nail trimmer with safety stop. Suitable for medium and large dogs.",
+            "price": 8.99,
+            "price_unit": "each",
+            "image_url": "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=500&h=500&fit=crop",
+            "rating": 4.5,
+            "pet_type": "dog",
+            "product_category": "grooming",
+            "attributes": {
+                "size_suitability": ["medium", "large"],
+                "features": ["safety stop", "non-slip grip", "sharp blades"]
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        
+        # Dog Health (2 products)
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Cosequin Joint Health Supplement",
+            "brand": "Nutramax",
+            "description": "Veterinarian recommended joint supplement with glucosamine and chondroitin.",
+            "price": 49.99,
+            "price_unit": "110 chewable tablets",
+            "image_url": "https://images.unsplash.com/photo-1526336024174-e58f5cdd8e13?w=500&h=500&fit=crop",
+            "rating": 4.8,
+            "pet_type": "dog",
+            "product_category": "health",
+            "attributes": {
+                "supplement_type": "joint_health",
+                "form": "chewable",
+                "key_ingredients": ["glucosamine", "chondroitin", "MSM"],
+                "vet_recommended": True
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Zesty Paws Multivitamin Treats",
+            "brand": "Zesty Paws",
+            "description": "8-in-1 multivitamin with glucosamine, probiotics, and omega-3. Chicken flavor.",
+            "price": 25.97,
+            "price_unit": "90 soft chews",
+            "image_url": "https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?w=500&h=500&fit=crop",
+            "rating": 4.6,
+            "pet_type": "dog",
+            "product_category": "health",
+            "attributes": {
+                "supplement_type": "multivitamin",
+                "form": "soft_chew",
+                "benefits": ["joint", "digestive", "immune", "skin_coat"],
+                "flavor": "chicken"
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
         },
     ]
     
     # ============= CAT PRODUCTS (15) =============
     cat_products = [
-        # Food (5 products)
+        # Cat Food (5 products)
         {
-            "name": "Indoor Health Adult Cat Food",
-            "brand": "Blue Buffalo",
-            "description": "Natural ingredients with chicken, for healthy weight and hairball control.",
-            "price": 24.98,
-            "price_unit": "15 lb bag",
-            "image_url": "https://images.unsplash.com/photo-1589883661923-6476cd823f67?w=500&h=500&fit=crop",
+            "id": str(uuid.uuid4()),
+            "name": "Purina Fancy Feast Gourmet Wet Food",
+            "brand": "Fancy Feast",
+            "description": "Gourmet cat food with real seafood. Variety pack with ocean whitefish, tuna, and salmon.",
+            "price": 19.99,
+            "price_unit": "24-pack (3 oz cans)",
+            "image_url": "https://images.unsplash.com/photo-1589652717521-10c0d092dea9?w=500&h=500&fit=crop",
             "rating": 4.6,
             "pet_type": "cat",
             "product_category": "food",
             "attributes": {
                 "life_stage": ["adult"],
-                "primary_protein": "chicken",
-                "grain_free": False,
-                "ingredients": {
-                    "full_list": ["deboned chicken", "chicken meal", "brown rice", "barley", "pea fiber"],
-                    "allergens": ["chicken", "rice", "barley"]
-                },
-                "nutrition": {
-                    "protein_pct": 32,
-                    "fat_pct": 15,
-                    "fiber_pct": 7,
-                    "calories_per_cup": 391
-                }
-            }
-        },
-        # Litter (3 new products)
-        {
-            "name": "Dr. Elsey's Ultra Precious Cat Litter",
-            "brand": "Dr. Elsey's",
-            "description": "99.9% dust-free premium clumping litter with superior odor control. Perfect for multi-cat homes.",
-            "price": 19.99,
-            "price_unit": "40 lb bag",
-            "image_url": "https://images.unsplash.com/photo-1573865526739-10c1deaeecfa?w=500&h=500&fit=crop",
-            "rating": 4.8,
-            "pet_type": "cat",
-            "product_category": "litter",
-            "attributes": {
-                "type": "clay clumping",
-                "features": ["99.9% dust-free", "hard clumping", "low tracking", "unscented"],
-                "weight": "40 lbs",
-                "ideal_for": "multi-cat homes"
-            }
+                "form": "wet",
+                "primary_protein": "seafood",
+                "flavors": ["whitefish", "tuna", "salmon"]
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
         },
         {
-            "name": "World's Best Cat Litter - Multi-Cat",
-            "brand": "World's Best",
-            "description": "Natural corn-based litter that clumps tight and controls odor naturally. Flushable and septic safe.",
-            "price": 24.99,
-            "price_unit": "28 lb bag",
-            "image_url": "https://images.unsplash.com/photo-1572183459734-37e60dd2714f?w=500&h=500&fit=crop",
+            "id": str(uuid.uuid4()),
+            "name": "Royal Canin Indoor Adult Dry Cat Food",
+            "brand": "Royal Canin",
+            "description": "Formulated for indoor cats. Reduces stool odor and supports healthy digestion.",
+            "price": 43.99,
+            "price_unit": "15 lb bag",
+            "image_url": "https://images.unsplash.com/photo-1611915387288-fd8d2f5f928b?w=500&h=500&fit=crop",
             "rating": 4.7,
             "pet_type": "cat",
-            "product_category": "litter",
+            "product_category": "food",
             "attributes": {
-                "type": "natural corn",
-                "features": ["flushable", "septic safe", "quick clumping", "natural odor control"],
-                "weight": "28 lbs",
-                "eco_friendly": True
-            }
+                "life_stage": ["adult"],
+                "form": "dry",
+                "lifestyle": "indoor",
+                "nutrition": {
+                    "protein_pct": 25,
+                    "fat_pct": 11,
+                    "calories_per_cup": 338
+                }
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
         },
         {
-            "name": "PetSafe ScoopFree Self-Cleaning Litter Box",
-            "brand": "PetSafe",
-            "description": "Automatic self-cleaning litter box with crystal litter. Hands-free cleanup for weeks.",
-            "price": 179.95,
-            "price_unit": "Complete kit",
-            "image_url": "https://images.unsplash.com/photo-1545249390-6bdfa286032f?w=500&h=500&fit=crop",
-            "rating": 4.5,
+            "id": str(uuid.uuid4()),
+            "name": "Blue Buffalo Wilderness Grain-Free",
+            "brand": "Blue Buffalo",
+            "description": "High protein, grain-free formula. Deboned chicken with LifeSource Bits.",
+            "price": 38.98,
+            "price_unit": "11 lb bag",
+            "image_url": "https://images.unsplash.com/photo-1589652717521-10c0d092dea9?w=500&h=500&fit=crop",
+            "rating": 4.8,
             "pet_type": "cat",
-            "product_category": "litter",
+            "product_category": "food",
             "attributes": {
-                "type": "automatic litter box",
-                "features": ["self-cleaning", "health counter", "leak protection", "low tracking"],
-                "litter_type": "crystal",
-                "cleaning_schedule": "hands-free for weeks"
-            }
-        },
-        # Toys (3 new products)
-        {
-            "name": "Yeowww! Catnip Banana",
-            "brand": "Yeowww!",
-            "description": "100% organic catnip in a fun banana shape. No added ingredients or fillers.",
-            "price": 7.99,
-            "price_unit": "Single toy",
-            "image_url": "https://images.unsplash.com/photo-1611003228941-98852ba62227?w=500&h=500&fit=crop",
-            "rating": 4.9,
-            "pet_type": "cat",
-            "product_category": "toys",
-            "attributes": {
-                "material": "durable cotton twill",
-                "catnip": "100% organic",
-                "size": "7 inches",
-                "features": ["no stuffing", "no chemicals", "handmade in USA"]
-            }
+                "life_stage": ["adult"],
+                "form": "dry",
+                "grain_free": True,
+                "primary_protein": "chicken",
+                "nutrition": {
+                    "protein_pct": 40,
+                    "fat_pct": 18
+                }
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
         },
         {
-            "name": "Catit Senses 2.0 Ball Dome",
-            "brand": "Catit",
-            "description": "Interactive toy that stimulates cats' senses. Illuminated ball peaks curiosity.",
-            "price": 12.99,
-            "price_unit": "Single unit",
+            "id": str(uuid.uuid4()),
+            "name": "Hill's Science Diet Kitten Formula",
+            "brand": "Hill's Science Diet",
+            "description": "Balanced nutrition for kittens up to 1 year. DHA for brain and eye development.",
+            "price": 35.99,
+            "price_unit": "7 lb bag",
             "image_url": "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=500&h=500&fit=crop",
+            "rating": 4.7,
+            "pet_type": "cat",
+            "product_category": "food",
+            "attributes": {
+                "life_stage": ["kitten"],
+                "form": "dry",
+                "primary_protein": "chicken",
+                "nutrition": {
+                    "protein_pct": 35,
+                    "DHA": True
+                }
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Wellness CORE Grain-Free Pate",
+            "brand": "Wellness",
+            "description": "High-protein wet food. Chicken and turkey recipe with vitamins and minerals.",
+            "price": 29.99,
+            "price_unit": "12-pack (5.5 oz cans)",
+            "image_url": "https://images.unsplash.com/photo-1606214174585-fe31582dc6ee?w=500&h=500&fit=crop",
             "rating": 4.6,
             "pet_type": "cat",
+            "product_category": "food",
+            "attributes": {
+                "life_stage": ["adult"],
+                "form": "wet",
+                "grain_free": True,
+                "primary_protein": "chicken",
+                "nutrition": {
+                    "protein_pct": 12,
+                    "fat_pct": 6
+                }
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        
+        # Cat Toys (5 products)
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Yeowww! Catnip Banana",
+            "brand": "Yeowww!",
+            "description": "100% organic catnip stuffed toy. No cotton, plastic, or chemicals.",
+            "price": 6.99,
+            "price_unit": "each",
+            "image_url": "https://images.unsplash.com/photo-1545249390-6bdfa286032f?w=500&h=500&fit=crop",
+            "rating": 4.8,
+            "pet_type": "cat",
             "product_category": "toys",
             "attributes": {
-                "type": "interactive",
-                "features": ["motion-activated light", "peek-a-boo openings", "non-slip base"],
-                "batteries": "included",
-                "activity": "mental stimulation"
-            }
+                "material": "cotton_fabric",
+                "catnip": "100% organic",
+                "features": ["handmade", "USA grown catnip"]
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
         },
         {
-            "name": "SmartyKat Hot Pursuit Electronic Toy",
+            "id": str(uuid.uuid4()),
+            "name": "SmartyKat Hot Pursuit Electronic Cat Toy",
             "brand": "SmartyKat",
-            "description": "Concealed electronic motion toy with feathers and lights. Erratic movements mimic prey.",
-            "price": 19.99,
-            "price_unit": "Single toy",
-            "image_url": "https://images.unsplash.com/photo-1596854407944-bf87f6fdd49e?w=500&h=500&fit=crop",
+            "description": "Electronic concealed motion toy. Feather wand spins unpredictably under fabric.",
+            "price": 14.99,
+            "price_unit": "each",
+            "image_url": "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=500&h=500&fit=crop",
             "rating": 4.5,
             "pet_type": "cat",
             "product_category": "toys",
             "attributes": {
                 "type": "electronic",
-                "features": ["4 speed settings", "auto-shutoff", "feather attachment", "LED lights"],
-                "batteries": "4 AA (not included)",
-                "activity": "exercise and play"
-            }
+                "features": ["auto shutoff", "4 speeds", "battery powered"],
+                "activity": "chase"
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Cat Dancer Interactive Toy",
+            "brand": "Cat Dancer",
+            "description": "Simple spring wire with cardboard rolls. Provides hours of interactive play.",
+            "price": 2.99,
+            "price_unit": "each",
+            "image_url": "https://images.unsplash.com/photo-1548681528-6a5c45b66b42?w=500&h=500&fit=crop",
+            "rating": 4.7,
+            "pet_type": "cat",
+            "product_category": "toys",
+            "attributes": {
+                "type": "wand",
+                "material": "spring_wire",
+                "features": ["interactive", "exercise"],
+                "made_in": "USA"
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Bergan Turbo Scratcher Cat Toy",
+            "brand": "Bergan",
+            "description": "2-in-1 scratcher and toy. Ball spins around track while cat scratches center.",
+            "price": 18.99,
+            "price_unit": "each",
+            "image_url": "https://images.unsplash.com/photo-1574144611937-0df059b5ef3e?w=500&h=500&fit=crop",
+            "rating": 4.6,
+            "pet_type": "cat",
+            "product_category": "toys",
+            "attributes": {
+                "type": "scratcher_toy",
+                "features": ["replaceable pad", "ball included"],
+                "material": "cardboard_plastic"
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Petstages Tower of Tracks",
+            "brand": "Petstages",
+            "description": "3-tier track tower with non-slip base. Three levels of mental and physical stimulation.",
+            "price": 16.99,
+            "price_unit": "each",
+            "image_url": "https://images.unsplash.com/photo-1513360371669-4adf3dd7dff8?w=500&h=500&fit=crop",
+            "rating": 4.5,
+            "pet_type": "cat",
+            "product_category": "toys",
+            "attributes": {
+                "type": "puzzle",
+                "tiers": 3,
+                "features": ["non-slip base", "bright balls", "solo play"]
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        
+        # Cat Litter (3 products)
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Dr. Elsey's Ultra Cat Litter",
+            "brand": "Dr. Elsey's",
+            "description": "99.9% dust-free, hypoallergenic clay litter. Superior clumping and odor control.",
+            "price": 19.99,
+            "price_unit": "40 lb bag",
+            "image_url": "https://images.unsplash.com/photo-1425082661705-1834bfd09dca?w=500&h=500&fit=crop",
+            "rating": 4.8,
+            "pet_type": "cat",
+            "product_category": "litter",
+            "attributes": {
+                "type": "clay",
+                "clumping": True,
+                "features": ["dust-free", "hypoallergenic", "unscented"],
+                "weight_lbs": 40
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "World's Best Cat Litter Multiple Cat",
+            "brand": "World's Best",
+            "description": "Natural corn-based clumping litter. Flushable and 99% dust-free.",
+            "price": 24.99,
+            "price_unit": "28 lb bag",
+            "image_url": "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=500&h=500&fit=crop",
+            "rating": 4.7,
+            "pet_type": "cat",
+            "product_category": "litter",
+            "attributes": {
+                "type": "corn",
+                "clumping": True,
+                "features": ["flushable", "biodegradable", "lightweight"],
+                "households": "multi_cat"
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Fresh Step Odor Shield Scented Litter",
+            "brand": "Fresh Step",
+            "description": "10 days of odor control. Ammonia block technology with Febreze freshness.",
+            "price": 15.99,
+            "price_unit": "25 lb box",
+            "image_url": "https://images.unsplash.com/photo-1583795128727-6ec3642408f8?w=500&h=500&fit=crop",
+            "rating": 4.5,
+            "pet_type": "cat",
+            "product_category": "litter",
+            "attributes": {
+                "type": "clay",
+                "clumping": True,
+                "scented": True,
+                "features": ["ammonia block", "odor control"],
+                "weight_lbs": 25
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        
+        # Cat Health (2 products)
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Greenies Feline Dental Treats",
+            "brand": "Greenies",
+            "description": "Crunchy treats reduce tartar buildup. Salmon flavor with vitamins and minerals.",
+            "price": 7.99,
+            "price_unit": "2.1 oz",
+            "image_url": "https://images.unsplash.com/photo-1573865526739-10c1c50f6b1f?w=500&h=500&fit=crop",
+            "rating": 4.6,
+            "pet_type": "cat",
+            "product_category": "health",
+            "attributes": {
+                "type": "dental_treat",
+                "flavor": "salmon",
+                "benefits": ["tartar_control", "fresh_breath"],
+                "form": "crunchy"
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Tomlyn Hairball Remedy Gel",
+            "brand": "Tomlyn",
+            "description": "Laxatone lubricant helps eliminate and prevent hairballs. Tuna flavor cats love.",
+            "price": 8.99,
+            "price_unit": "4.25 oz",
+            "image_url": "https://images.unsplash.com/photo-1596854407944-bf87f6fdd49e?w=500&h=500&fit=crop",
+            "rating": 4.7,
+            "pet_type": "cat",
+            "product_category": "health",
+            "attributes": {
+                "type": "hairball_remedy",
+                "form": "gel",
+                "flavor": "tuna",
+                "vet_recommended": True
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
         },
     ]
     
-    # ============= BIRD PRODUCTS (10) =============
+    # ============= BIRD PRODUCTS (8) =============
     bird_products = [
         {
-            "name": "Nutriberries Parrot Food",
-            "brand": "Lafeber",
-            "description": "Nutritionally complete parrot food with natural colors, vitamins, and minerals. No artificial preservatives.",
-            "price": 22.99,
-            "price_unit": "12.5 oz",
+            "id": str(uuid.uuid4()),
+            "name": "Kaytee Forti-Diet Pro Health Parakeet Food",
+            "brand": "Kaytee",
+            "description": "Nutritionally enhanced daily diet for parakeets. Probiotics for digestive health.",
+            "price": 12.99,
+            "price_unit": "5 lb bag",
             "image_url": "https://images.unsplash.com/photo-1552728089-57bdde30beb3?w=500&h=500&fit=crop",
-            "rating": 4.8,
+            "rating": 4.6,
             "pet_type": "bird",
             "product_category": "food",
             "attributes": {
-                "bird_type": ["parrot", "macaw", "cockatoo"],
-                "features": ["complete nutrition", "natural ingredients", "hulled seeds"],
-                "form": "berry shaped pellets",
-                "no_artificial": True
-            }
+                "bird_type": "parakeet",
+                "nutrition": "complete_diet",
+                "features": ["probiotics", "omega-3"]
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
         },
         {
-            "name": "Roudybush Daily Maintenance Pellets",
-            "brand": "Roudybush",
-            "description": "Premium steam pelleted bird food. Complete and balanced nutrition for adult birds.",
-            "price": 18.99,
-            "price_unit": "25 lb bag",
+            "id": str(uuid.uuid4()),
+            "name": "Zupreem FruitBlend Parrot Food",
+            "brand": "Zupreem",
+            "description": "Fruit-flavored pellets for medium parrots. Complete nutrition with natural fruit flavors.",
+            "price": 19.99,
+            "price_unit": "3.5 lb bag",
             "image_url": "https://images.unsplash.com/photo-1444464666168-49d633b86797?w=500&h=500&fit=crop",
             "rating": 4.7,
             "pet_type": "bird",
             "product_category": "food",
             "attributes": {
-                "bird_type": ["parakeet", "cockatiel", "conure"],
-                "features": ["steam pelleted", "complete nutrition", "no artificial colors"],
-                "pellet_size": "small",
-                "life_stage": "adult maintenance"
-            }
+                "bird_type": "parrot",
+                "form": "pellets",
+                "flavors": ["banana", "orange", "apple", "grape"]
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
         },
         {
-            "name": "Java Wood Play Stand",
+            "id": str(uuid.uuid4()),
+            "name": "Kaytee Spray Millet Bird Treat",
+            "brand": "Kaytee",
+            "description": "100% natural spray millet. Ideal for birds of all sizes. 12 spray pack.",
+            "price": 8.99,
+            "price_unit": "12-pack",
+            "image_url": "https://images.unsplash.com/photo-1523431278009-9cd3e672c0e0?w=500&h=500&fit=crop",
+            "rating": 4.8,
+            "pet_type": "bird",
+            "product_category": "treats",
+            "attributes": {
+                "bird_type": "all",
+                "natural": True,
+                "quantity": 12
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "JW Pet Activitoy Birdie Basketball",
+            "brand": "JW Pet",
+            "description": "Interactive basketball toy for birds. Provides mental and physical stimulation.",
+            "price": 6.99,
+            "price_unit": "each",
+            "image_url": "https://images.unsplash.com/photo-1606567595334-d39972c85dbe?w=500&h=500&fit=crop",
+            "rating": 4.5,
+            "pet_type": "bird",
+            "product_category": "toys",
+            "attributes": {
+                "bird_type": "small_medium",
+                "features": ["interactive", "colorful"],
+                "activity": "play"
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Prevue Pet Birdie Basics Wood Bird Ladder",
             "brand": "Prevue Pet",
-            "description": "Natural java wood perch and play stand. Multiple perch levels for climbing and playing.",
-            "price": 89.99,
-            "price_unit": "Medium size",
-            "image_url": "https://images.unsplash.com/photo-1576174464184-fb78fe882bfd?w=500&h=500&fit=crop",
+            "description": "11-step natural wood ladder. Encourages exercise and climbing.",
+            "price": 5.99,
+            "price_unit": "each",
+            "image_url": "https://images.unsplash.com/photo-1586716402203-79219bede345?w=500&h=500&fit=crop",
             "rating": 4.6,
             "pet_type": "bird",
             "product_category": "toys",
             "attributes": {
-                "material": "natural java wood",
-                "bird_type": ["medium to large parrots"],
-                "features": ["multiple perches", "heavy duty cups", "rolling base"],
-                "dimensions": "18x18x36 inches"
-            }
+                "bird_type": "all",
+                "material": "natural_wood",
+                "steps": 11,
+                "length_inches": 13
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
         },
         {
-            "name": "Bonka Bird Toys Foraging Wall",
-            "brand": "Bonka Bird",
-            "description": "Interactive foraging toy that encourages natural behaviors. Fill with treats for mental stimulation.",
-            "price": 24.99,
-            "price_unit": "Single toy",
-            "image_url": "https://images.unsplash.com/photo-1535083783855-76ae62b2914e?w=500&h=500&fit=crop",
-            "rating": 4.7,
+            "id": str(uuid.uuid4()),
+            "name": "Penn-Plax Bird Life Rope Perch",
+            "brand": "Penn-Plax",
+            "description": "Bendable rope perch. Provides foot exercise and helps maintain nails.",
+            "price": 9.99,
+            "price_unit": "21 inch",
+            "image_url": "https://images.unsplash.com/photo-1522926193341-e9ffd686c60f?w=500&h=500&fit=crop",
+            "rating": 4.5,
             "pet_type": "bird",
-            "product_category": "toys",
+            "product_category": "perch",
             "attributes": {
-                "type": "foraging toy",
-                "bird_type": ["medium parrots"],
-                "features": ["interactive", "fill with treats", "bright colors"],
-                "material": "bird-safe plastic and wood"
-            }
+                "bird_type": "medium_large",
+                "material": "cotton_rope",
+                "bendable": True,
+                "length_inches": 21
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Insight Clean Seed Silo Bird Feeder",
+            "brand": "JW Pet",
+            "description": "Clear plastic feeder with perch. Easy to fill and clean. Prevents seed waste.",
+            "price": 7.99,
+            "price_unit": "each",
+            "image_url": "https://images.unsplash.com/photo-1535463731090-e34f4b5098c5?w=500&h=500&fit=crop",
+            "rating": 4.6,
+            "pet_type": "bird",
+            "product_category": "feeder",
+            "attributes": {
+                "bird_type": "small_medium",
+                "material": "plastic",
+                "features": ["easy_fill", "waste_guard"],
+                "capacity_oz": 4
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Ecotrition Vita-Sol Multi-Vitamin for Birds",
+            "brand": "Ecotrition",
+            "description": "Liquid vitamin supplement. Adds essential vitamins to drinking water.",
+            "price": 6.99,
+            "price_unit": "4 oz",
+            "image_url": "https://images.unsplash.com/photo-1541364983171-a8ba01e95cfc?w=500&h=500&fit=crop",
+            "rating": 4.4,
+            "pet_type": "bird",
+            "product_category": "health",
+            "attributes": {
+                "bird_type": "all",
+                "form": "liquid",
+                "vitamins": ["A", "D3", "E", "B-complex"]
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
         },
     ]
     
-    # ============= FISH PRODUCTS (8) =============
+    # ============= FISH & AQUARIUM (6) =============
     fish_products = [
         {
-            "name": "Tetra Min Tropical Flakes",
+            "id": str(uuid.uuid4()),
+            "name": "Tetra TetraMin Tropical Flakes",
             "brand": "Tetra",
-            "description": "Nutritionally balanced fish food for all tropical fish. Clean and clear water formula.",
-            "price": 7.99,
+            "description": "Nutritionally balanced staple food for tropical fish. Clean & clear water formula.",
+            "price": 9.99,
             "price_unit": "2.2 oz",
-            "image_url": "https://images.unsplash.com/photo-1520990053419-6e5faa65c6f5?w=500&h=500&fit=crop",
-            "rating": 4.6,
-            "pet_type": "fish",
-            "product_category": "food",
-            "attributes": {
-                "fish_type": ["tropical fish", "goldfish"],
-                "form": "flakes",
-                "features": ["vitamin C boost", "clear water formula", "daily feeding"],
-                "ingredients": ["fish meal", "wheat gluten", "spirulina"]
-            }
-        },
-        {
-            "name": "API Betta Pellets",
-            "brand": "API",
-            "description": "Nutritionally complete pellets specifically for betta fish. Enhances color naturally.",
-            "price": 5.99,
-            "price_unit": "1.5 oz",
-            "image_url": "https://images.unsplash.com/photo-1524704654690-b56c05c78a00?w=500&h=500&fit=crop",
+            "image_url": "https://images.unsplash.com/photo-1524704796725-9fc3044a58b2?w=500&h=500&fit=crop",
             "rating": 4.7,
             "pet_type": "fish",
             "product_category": "food",
             "attributes": {
-                "fish_type": ["betta"],
-                "form": "floating pellets",
-                "features": ["color enhancing", "high protein", "complete nutrition"],
-                "feeding": "2-3 times daily"
-            }
+                "fish_type": "tropical",
+                "form": "flakes",
+                "features": ["clear_water", "balanced_nutrition"]
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
         },
         {
-            "name": "Aqueon Aquarium Water Changer",
-            "brand": "Aqueon",
-            "description": "Complete water change system. No buckets, no spills, no stress.",
-            "price": 29.99,
-            "price_unit": "25 ft hose",
-            "image_url": "https://images.unsplash.com/photo-1535083783855-76ae62b2914e?w=500&h=500&fit=crop",
+            "id": str(uuid.uuid4()),
+            "name": "API Stress Coat Water Conditioner",
+            "brand": "API",
+            "description": "Makes tap water safe for fish. Aloe vera formula heals damaged tissue and fins.",
+            "price": 13.99,
+            "price_unit": "16 oz",
+            "image_url": "https://images.unsplash.com/photo-1535591273668-578e31182c4f?w=500&h=500&fit=crop",
             "rating": 4.8,
             "pet_type": "fish",
-            "product_category": "accessories",
+            "product_category": "water_treatment",
             "attributes": {
-                "type": "water changer",
-                "features": ["switches from drain to fill", "no heavy lifting", "stress-free"],
-                "hose_length": "25 feet",
-                "tank_size": "up to 100 gallons"
-            }
+                "type": "conditioner",
+                "features": ["removes_chlorine", "aloe_vera", "heals_tissue"],
+                "treats_gallons": 960
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
         },
         {
-            "name": "Seachem Prime Water Conditioner",
-            "brand": "Seachem",
-            "description": "Complete and concentrated conditioner for both fresh and salt water. Removes chlorine and chloramine.",
-            "price": 12.99,
-            "price_unit": "500 ml",
+            "id": str(uuid.uuid4()),
+            "name": "Aqueon Aquarium Water Changer",
+            "brand": "Aqueon",
+            "description": "Complete water changer system. Drains and fills aquarium with no lifting.",
+            "price": 34.99,
+            "price_unit": "25 feet",
+            "image_url": "https://images.unsplash.com/photo-1520990269108-4ea6c8422e66?w=500&h=500&fit=crop",
+            "rating": 4.6,
+            "pet_type": "fish",
+            "product_category": "maintenance",
+            "attributes": {
+                "type": "water_changer",
+                "hose_length_ft": 25,
+                "features": ["no_buckets", "spill_guard"]
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Fluval Bio-Foam Filter Pads",
+            "brand": "Fluval",
+            "description": "Complex pore structure for superior biological filtration. Prevents clogging.",
+            "price": 8.99,
+            "price_unit": "4-pack",
+            "image_url": "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=500&h=500&fit=crop",
+            "rating": 4.7,
+            "pet_type": "fish",
+            "product_category": "filter",
+            "attributes": {
+                "type": "filter_media",
+                "material": "foam",
+                "quantity": 4,
+                "filtration": "biological"
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Hygger Aquarium Air Stone Kit",
+            "brand": "Hygger",
+            "description": "Ultra-quiet air stone with check valve. Creates bubbles for oxygen and decoration.",
+            "price": 11.99,
+            "price_unit": "kit",
             "image_url": "https://images.unsplash.com/photo-1522069169874-c58ec4b76be5?w=500&h=500&fit=crop",
-            "rating": 4.9,
+            "rating": 4.5,
             "pet_type": "fish",
             "product_category": "accessories",
             "attributes": {
-                "type": "water conditioner",
-                "features": ["removes chlorine", "detoxifies ammonia", "concentrated formula"],
-                "treats": "up to 5000 gallons",
-                "safe_for": "all aquatic life"
-            }
+                "type": "air_stone",
+                "features": ["quiet", "check_valve", "LED_light"],
+                "includes": ["tube", "valve", "stone"]
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Marina Aquarium Thermometer",
+            "brand": "Marina",
+            "description": "Floating thermometer with suction cup. Easy-to-read temperature scale.",
+            "price": 3.99,
+            "price_unit": "each",
+            "image_url": "https://images.unsplash.com/photo-1535930891776-0c2dfb7fda1a?w=500&h=500&fit=crop",
+            "rating": 4.4,
+            "pet_type": "fish",
+            "product_category": "accessories",
+            "attributes": {
+                "type": "thermometer",
+                "mounting": "floating_suction",
+                "scale": "fahrenheit_celsius"
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
         },
     ]
     
-    # ============= RABBIT & SMALL PETS (8) =============
+    # ============= SMALL PETS (Hamster, Rabbit, Guinea Pig) (6) =============
     small_pet_products = [
         {
-            "name": "Oxbow Essentials Bunny Basics Timothy Pellets",
+            "id": str(uuid.uuid4()),
+            "name": "Oxbow Essentials Adult Rabbit Food",
             "brand": "Oxbow",
-            "description": "Uniform pellets made from Timothy hay. Complete and balanced nutrition for adult rabbits.",
-            "price": 21.99,
+            "description": "Timothy-based pellets for adult rabbits. Supports digestive health.",
+            "price": 19.99,
             "price_unit": "10 lb bag",
             "image_url": "https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?w=500&h=500&fit=crop",
             "rating": 4.8,
-            "pet_type": "rabbit",
+            "pet_type": "small_pet",
             "product_category": "food",
             "attributes": {
-                "animal_type": ["rabbit"],
-                "hay_type": "timothy",
-                "features": ["uniform pellets", "high fiber", "no artificial preservatives"],
+                "animal": "rabbit",
                 "life_stage": "adult",
-                "protein_pct": 14
-            }
+                "main_ingredient": "timothy_hay",
+                "features": ["high_fiber", "no_artificial_preservatives"]
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
         },
         {
+            "id": str(uuid.uuid4()),
             "name": "Kaytee Clean & Cozy Small Pet Bedding",
             "brand": "Kaytee",
-            "description": "99.9% dust-free paper bedding. Super absorbent and odor control for up to 14 days.",
-            "price": 19.99,
-            "price_unit": "1000 cubic inches",
+            "description": "99.9% dust-free paper bedding. Absorbs 6x its weight. White color.",
+            "price": 21.99,
+            "price_unit": "49.2 liters",
+            "image_url": "https://images.unsplash.com/photo-1548767797-d8c844163c4c?w=500&h=500&fit=crop",
+            "rating": 4.7,
+            "pet_type": "small_pet",
+            "product_category": "bedding",
+            "attributes": {
+                "animal": ["hamster", "rabbit", "guinea_pig"],
+                "material": "paper",
+                "features": ["dust_free", "super_absorbent", "odor_control"],
+                "volume_liters": 49.2
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Niteangel Hamster Wooden Chew Toys",
+            "brand": "Niteangel",
+            "description": "6-pack natural wooden chew toys. Promotes dental health and entertainment.",
+            "price": 12.99,
+            "price_unit": "6-pack",
+            "image_url": "https://images.unsplash.com/photo-1425082661705-1834bfd09dca?w=500&h=500&fit=crop",
+            "rating": 4.6,
+            "pet_type": "small_pet",
+            "product_category": "toys",
+            "attributes": {
+                "animal": ["hamster", "gerbil"],
+                "material": "natural_wood",
+                "quantity": 6,
+                "benefits": ["dental_health", "boredom_relief"]
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Living World Guinea Pig Food",
+            "brand": "Living World",
+            "description": "Premium mix with vitamin C. Fortified with essential nutrients for guinea pigs.",
+            "price": 14.99,
+            "price_unit": "5 lb bag",
+            "image_url": "https://images.unsplash.com/photo-1612363148951-16bc1c000802?w=500&h=500&fit=crop",
+            "rating": 4.5,
+            "pet_type": "small_pet",
+            "product_category": "food",
+            "attributes": {
+                "animal": "guinea_pig",
+                "fortified": ["vitamin_C", "vitamins", "minerals"],
+                "form": "pellets"
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Kaytee Comfort Exercise Wheel",
+            "brand": "Kaytee",
+            "description": "Silent spinner wheel for hamsters. Comfortable running surface. 8.5 inch diameter.",
+            "price": 16.99,
+            "price_unit": "8.5 inch",
             "image_url": "https://images.unsplash.com/photo-1425082661705-1834bfd09dca?w=500&h=500&fit=crop",
             "rating": 4.7,
-            "pet_type": "rabbit",
-            "product_category": "accessories",
+            "pet_type": "small_pet",
+            "product_category": "toys",
             "attributes": {
-                "animal_type": ["rabbit", "guinea pig", "hamster"],
-                "material": "paper",
-                "features": ["99.9% dust-free", "odor control", "2x more absorbent"],
-                "color": "white",
-                "expands": "2.5x volume"
-            }
+                "animal": ["hamster", "gerbil"],
+                "diameter_inches": 8.5,
+                "features": ["silent", "comfort_surface", "free_standing"],
+                "type": "exercise_wheel"
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
         },
         {
-            "name": "Living World Deluxe Habitat",
+            "id": str(uuid.uuid4()),
+            "name": "Living World Hay Feeder for Rabbits",
             "brand": "Living World",
-            "description": "Large habitat for rabbits and guinea pigs. Deep base for bedding and includes accessories.",
-            "price": 89.99,
-            "price_unit": "X-Large",
-            "image_url": "https://images.unsplash.com/photo-1548481899-acd79defbd72?w=500&h=500&fit=crop",
+            "description": "Minimizes hay waste. Attaches to cage. Keeps hay clean and accessible.",
+            "price": 9.99,
+            "price_unit": "each",
+            "image_url": "https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?w=500&h=500&fit=crop",
             "rating": 4.6,
-            "pet_type": "rabbit",
-            "product_category": "accessories",
+            "pet_type": "small_pet",
+            "product_category": "feeder",
             "attributes": {
-                "animal_type": ["rabbit", "guinea pig"],
-                "dimensions": "47 x 22.8 x 19.9 inches",
-                "features": ["deep base", "hay guard", "top opening", "accessories included"],
-                "includes": ["water bottle", "food dish", "hay guard"]
-            }
+                "animal": ["rabbit", "guinea_pig"],
+                "type": "hay_feeder",
+                "mounting": "cage_attach",
+                "features": ["minimizes_waste", "hygienic"]
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
         },
     ]
     
-    # ============= HUMAN SUPPLEMENTS (15) =============
+    # ============= SUPPLEMENTS & WELLNESS (4) =============
     supplement_products = [
         {
-            "name": "Vitamin D3 5000 IU",
-            "brand": "Nature Made",
-            "description": "High potency vitamin D3 for bone and immune health. USP verified for purity and potency.",
-            "price": 15.99,
-            "price_unit": "220 softgels",
-            "image_url": "https://images.unsplash.com/photo-1550572017-4454c04d7ae4?w=500&h=500&fit=crop",
-            "rating": 4.7,
-            "pet_type": "human",
-            "product_category": "supplements",
-            "attributes": {
-                "type": "vitamin",
-                "key_ingredients": ["vitamin D3 (cholecalciferol)"],
-                "benefits": ["bone health", "immune support", "muscle function"],
-                "dosage": "1 softgel daily",
-                "certifications": ["USP verified", "gluten-free"],
-                "form": "softgel"
-            }
-        },
-        {
-            "name": "Omega-3 Fish Oil 1000mg",
+            "id": str(uuid.uuid4()),
+            "name": "Nordic Naturals Pet Omega-3",
             "brand": "Nordic Naturals",
-            "description": "Premium omega-3 fish oil for heart and brain health. Third-party tested for purity.",
-            "price": 29.99,
-            "price_unit": "120 softgels",
-            "image_url": "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&h=500&fit=crop",
-            "rating": 4.8,
-            "pet_type": "human",
-            "product_category": "supplements",
-            "attributes": {
-                "type": "omega-3",
-                "key_ingredients": ["EPA 325mg", "DHA 225mg"],
-                "benefits": ["heart health", "brain function", "joint support"],
-                "dosage": "2 softgels daily",
-                "certifications": ["third-party tested", "non-GMO"],
-                "form": "softgel"
-            }
-        },
-        {
-            "name": "Probiotic 40 Billion CFU",
-            "brand": "Garden of Life",
-            "description": "High-potency probiotic with 40 billion cultures. Supports digestive and immune health.",
-            "price": 39.99,
-            "price_unit": "30 capsules",
-            "image_url": "https://images.unsplash.com/photo-1607619056574-7b8d3ee536b2?w=500&h=500&fit=crop",
-            "rating": 4.6,
-            "pet_type": "human",
-            "product_category": "supplements",
-            "attributes": {
-                "type": "probiotic",
-                "key_ingredients": ["40 billion CFU", "16 probiotic strains", "prebiotic fiber"],
-                "benefits": ["digestive health", "immune support", "gut balance"],
-                "dosage": "1 capsule daily",
-                "certifications": ["organic", "gluten-free", "dairy-free"],
-                "form": "vegetarian capsule"
-            }
-        },
-        {
-            "name": "Multivitamin for Men",
-            "brand": "One A Day",
-            "description": "Complete multivitamin formulated to support men's health concerns. Energy and immune support.",
-            "price": 18.99,
-            "price_unit": "200 tablets",
-            "image_url": "https://images.unsplash.com/photo-1571689935783-99faa51a0e1f?w=500&h=500&fit=crop",
-            "rating": 4.5,
-            "pet_type": "human",
-            "product_category": "supplements",
-            "attributes": {
-                "type": "multivitamin",
-                "gender": "men",
-                "key_ingredients": ["vitamins A, C, D, E, K", "B vitamins", "zinc", "magnesium"],
-                "benefits": ["energy", "heart health", "immune support"],
-                "dosage": "1 tablet daily",
-                "form": "tablet"
-            }
-        },
-        {
-            "name": "Collagen Peptides Powder",
-            "brand": "Vital Proteins",
-            "description": "Grass-fed collagen peptides for hair, skin, nails, and joint health. Unflavored and easily digestible.",
-            "price": 43.00,
-            "price_unit": "20 oz",
-            "image_url": "https://images.unsplash.com/photo-1556909172-54557c7e4fb7?w=500&h=500&fit=crop",
+            "description": "Fish oil for dogs and cats. Supports skin, coat, heart, and immune health.",
+            "price": 27.99,
+            "price_unit": "8 oz",
+            "image_url": "https://images.unsplash.com/photo-1526336024174-e58f5cdd8e13?w=500&h=500&fit=crop",
             "rating": 4.7,
-            "pet_type": "human",
-            "product_category": "supplements",
+            "pet_type": "supplement",
+            "product_category": "health",
             "attributes": {
-                "type": "collagen",
-                "key_ingredients": ["grass-fed bovine collagen", "20g protein per serving"],
-                "benefits": ["hair growth", "skin elasticity", "joint support", "nail strength"],
-                "dosage": "1-2 scoops daily",
-                "certifications": ["grass-fed", "paleo friendly"],
-                "form": "powder"
-            }
+                "suitable_for": ["dog", "cat"],
+                "type": "omega_3",
+                "form": "liquid",
+                "benefits": ["skin_coat", "heart", "immune", "joint"]
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
         },
         {
-            "name": "Magnesium Glycinate 400mg",
-            "brand": "Doctor's Best",
-            "description": "Highly absorbable magnesium for muscle relaxation, sleep, and heart health.",
-            "price": 19.99,
-            "price_unit": "240 tablets",
-            "image_url": "https://images.unsplash.com/photo-1628771065518-0d82f1d61a4d?w=500&h=500&fit=crop",
-            "rating": 4.8,
-            "pet_type": "human",
-            "product_category": "supplements",
+            "id": str(uuid.uuid4()),
+            "name": "VetriScience Composure Calming Chews",
+            "brand": "VetriScience",
+            "description": "Calming supplement for anxious dogs. Helps with stress, travel, and fireworks.",
+            "price": 23.99,
+            "price_unit": "30 chews",
+            "image_url": "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=500&h=500&fit=crop",
+            "rating": 4.6,
+            "pet_type": "supplement",
+            "product_category": "health",
             "attributes": {
-                "type": "mineral",
-                "key_ingredients": ["magnesium glycinate 400mg"],
-                "benefits": ["muscle relaxation", "sleep quality", "heart health", "bone strength"],
-                "dosage": "2 tablets daily",
-                "form": "tablet",
-                "absorption": "high bioavailability"
-            }
+                "suitable_for": ["dog"],
+                "type": "calming",
+                "form": "chewable",
+                "key_ingredients": ["thiamine", "L-theanine", "colostrum"],
+                "use_cases": ["anxiety", "travel", "fireworks", "separation"]
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "PetHonesty Cranberry for Dogs",
+            "brand": "PetHonesty",
+            "description": "Urinary tract support chews. Cranberry extract with probiotics and marshmallow root.",
+            "price": 24.99,
+            "price_unit": "90 chews",
+            "image_url": "https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?w=500&h=500&fit=crop",
+            "rating": 4.5,
+            "pet_type": "supplement",
+            "product_category": "health",
+            "attributes": {
+                "suitable_for": ["dog"],
+                "type": "urinary_health",
+                "form": "soft_chew",
+                "key_ingredients": ["cranberry", "probiotics", "marshmallow_root"]
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Purina FortiFlora Probiotic Supplement",
+            "brand": "Purina",
+            "description": "#1 vet-recommended probiotic. Supports digestive and immune health in cats.",
+            "price": 32.99,
+            "price_unit": "30 packets",
+            "image_url": "https://images.unsplash.com/photo-1573865526739-10c1c50f6b1f?w=500&h=500&fit=crop",
+            "rating": 4.8,
+            "pet_type": "supplement",
+            "product_category": "health",
+            "attributes": {
+                "suitable_for": ["cat"],
+                "type": "probiotic",
+                "form": "powder",
+                "benefits": ["digestive_health", "immune_support", "diarrhea_relief"],
+                "vet_recommended": True
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
         },
     ]
     
-    # ============= HUMAN SHOES/APPAREL (12) =============
+    # ============= APPAREL & SHOES (4) =============
     apparel_products = [
         {
+            "id": str(uuid.uuid4()),
             "name": "Nike Air Max 270 Running Shoes",
             "brand": "Nike",
-            "description": "Men's running shoes with Max Air cushioning. Lightweight and breathable for all-day comfort.",
+            "description": "Max Air unit in heel provides ultra-soft cushioning. Breathable mesh upper.",
             "price": 150.00,
-            "price_unit": "Pair",
+            "price_unit": "pair",
             "image_url": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&h=500&fit=crop",
-            "rating": 4.6,
-            "pet_type": "human",
+            "rating": 4.7,
+            "pet_type": "apparel",
             "product_category": "shoes",
             "attributes": {
-                "type": "running shoes",
-                "gender": "men",
-                "features": ["Max Air cushioning", "breathable mesh", "durable outsole"],
-                "activity": ["running", "casual wear"],
-                "available_sizes": ["7-13"],
-                "colors": ["black/white", "navy/orange"]
-            }
+                "type": "running_shoes",
+                "gender": "unisex",
+                "sizes": ["7", "8", "9", "10", "11", "12"],
+                "colors": ["black", "white", "blue", "red"],
+                "features": ["air_max", "breathable", "cushioned"]
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
         },
         {
-            "name": "Adidas Ultraboost 22 Women's",
+            "id": str(uuid.uuid4()),
+            "name": "Adidas Ultraboost 22 Running Shoes",
             "brand": "Adidas",
-            "description": "Women's performance running shoes with responsive BOOST cushioning. Primeknit upper for comfort.",
-            "price": 180.00,
-            "price_unit": "Pair",
-            "image_url": "https://images.unsplash.com/photo-1607522370275-f14206abe5d3?w=500&h=500&fit=crop",
-            "rating": 4.8,
-            "pet_type": "human",
-            "product_category": "shoes",
-            "attributes": {
-                "type": "running shoes",
-                "gender": "women",
-                "features": ["BOOST cushioning", "Primeknit upper", "Continental rubber outsole"],
-                "activity": ["running", "training"],
-                "available_sizes": ["5-11"],
-                "colors": ["white/pink", "black/purple"]
-            }
-        },
-        {
-            "name": "New Balance 990v5 Made in USA",
-            "brand": "New Balance",
-            "description": "Premium sneakers made in USA with ENCAP midsole technology. Classic style meets modern comfort.",
-            "price": 185.00,
-            "price_unit": "Pair",
-            "image_url": "https://images.unsplash.com/photo-1539185441755-769473a23570?w=500&h=500&fit=crop",
-            "rating": 4.9,
-            "pet_type": "human",
-            "product_category": "shoes",
-            "attributes": {
-                "type": "lifestyle sneakers",
-                "gender": "unisex",
-                "features": ["Made in USA", "ENCAP midsole", "pigskin/mesh upper"],
-                "activity": ["casual wear", "walking"],
-                "available_sizes": ["4-15"],
-                "made_in": "USA"
-            }
-        },
-        {
-            "name": "Hoka Bondi 8 Maximum Cushion",
-            "brand": "Hoka",
-            "description": "Maximum cushioned running shoes for ultimate comfort. Ideal for long distances and recovery runs.",
-            "price": 165.00,
-            "price_unit": "Pair",
-            "image_url": "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=500&h=500&fit=crop",
-            "rating": 4.7,
-            "pet_type": "human",
-            "product_category": "shoes",
-            "attributes": {
-                "type": "max cushion running shoes",
-                "gender": "unisex",
-                "features": ["maximum cushioning", "Meta-Rocker geometry", "breathable mesh"],
-                "activity": ["long distance running", "recovery"],
-                "available_sizes": ["5-14"],
-                "cushion_level": "maximum"
-            }
-        },
-        {
-            "name": "Allbirds Tree Runners Eco-Friendly",
-            "brand": "Allbirds",
-            "description": "Sustainable running shoes made from eucalyptus tree fiber. Light, cool, and machine washable.",
-            "price": 98.00,
-            "price_unit": "Pair",
-            "image_url": "https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?w=500&h=500&fit=crop",
-            "rating": 4.6,
-            "pet_type": "human",
-            "product_category": "shoes",
-            "attributes": {
-                "type": "eco-friendly runners",
-                "gender": "unisex",
-                "features": ["eucalyptus tree fiber", "machine washable", "carbon neutral"],
-                "activity": ["running", "everyday wear"],
-                "available_sizes": ["5-14"],
-                "sustainability": "carbon neutral"
-            }
-        },
-        {
-            "name": "On Cloud 5 Lightweight Sneakers",
-            "brand": "On",
-            "description": "Swiss-engineered running shoes with CloudTec cushioning. Lightweight and responsive.",
-            "price": 139.99,
-            "price_unit": "Pair",
+            "description": "Responsive Boost cushioning. Primeknit upper adapts to your foot for comfort.",
+            "price": 190.00,
+            "price_unit": "pair",
             "image_url": "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=500&h=500&fit=crop",
-            "rating": 4.7,
-            "pet_type": "human",
+            "rating": 4.8,
+            "pet_type": "apparel",
             "product_category": "shoes",
             "attributes": {
-                "type": "running shoes",
+                "type": "running_shoes",
                 "gender": "unisex",
-                "features": ["CloudTec cushioning", "speed lacing", "lightweight"],
-                "activity": ["running", "training"],
-                "available_sizes": ["5-13"],
-                "weight": "8.5 oz"
-            }
+                "sizes": ["6", "7", "8", "9", "10", "11", "12"],
+                "technology": ["boost", "primeknit", "continental_rubber"],
+                "features": ["energy_return", "adaptive_fit"]
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Lululemon Align High-Rise Leggings",
+            "brand": "Lululemon",
+            "description": "Buttery-soft Nulu fabric. High-rise design for comfort and coverage. 25 inch inseam.",
+            "price": 98.00,
+            "price_unit": "each",
+            "image_url": "https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=500&h=500&fit=crop",
+            "rating": 4.9,
+            "pet_type": "apparel",
+            "product_category": "clothing",
+            "attributes": {
+                "type": "leggings",
+                "gender": "women",
+                "sizes": ["2", "4", "6", "8", "10", "12"],
+                "inseam_inches": 25,
+                "fabric": "nulu",
+                "features": ["high_rise", "buttery_soft", "no_pockets"]
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "name": "Patagonia Better Sweater Fleece Jacket",
+            "brand": "Patagonia",
+            "description": "Classic fleece jacket with sweater-knit face. Fair Trade Certified sewn.",
+            "price": 139.00,
+            "price_unit": "each",
+            "image_url": "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&h=500&fit=crop",
+            "rating": 4.8,
+            "pet_type": "apparel",
+            "product_category": "clothing",
+            "attributes": {
+                "type": "fleece_jacket",
+                "gender": "unisex",
+                "sizes": ["XS", "S", "M", "L", "XL", "XXL"],
+                "material": "polyester_fleece",
+                "features": ["fair_trade", "zippered_pockets", "stand_up_collar"],
+                "eco_friendly": True
+            },
+            "is_active": True,
+            "created_at": datetime.now().isoformat()
         },
     ]
     
@@ -709,17 +1248,25 @@ def seed_products():
         supplement_products + apparel_products
     )
     
-    # Clear existing recommendations and products to avoid foreign key violations
-    db.query(Recommendation).delete()
-    db.query(Product).delete()
-    db.commit()
+    # Clear existing products (Supabase will cascade delete recommendations)
+    try:
+        supabase.table('recommendations').delete().neq('id', '00000000-0000-0000-0000-000000000000').execute()
+        supabase.table('products').delete().neq('id', '00000000-0000-0000-0000-000000000000').execute()
+        print("✅ Cleared existing products and recommendations")
+    except Exception as e:
+        print(f"⚠️  Clear operation: {e}")
     
-    for product_data in all_products:
-        product = Product(**product_data)
-        db.add(product)
+    # Insert products in batches (Supabase has limits)
+    batch_size = 50
+    for i in range(0, len(all_products), batch_size):
+        batch = all_products[i:i+batch_size]
+        try:
+            supabase.table('products').insert(batch).execute()
+            print(f"✅ Inserted batch {i//batch_size + 1} ({len(batch)} products)")
+        except Exception as e:
+            print(f"❌ Error inserting batch: {e}")
     
-    db.commit()
-    print(f"✅ Seeded {len(all_products)} products with categories")
+    print(f"\n✅ Seeded {len(all_products)} products with categories")
     print(f"   - Dog products: {len(dog_products)}")
     print(f"   - Cat products: {len(cat_products)}")
     print(f"   - Bird products: {len(bird_products)}")
@@ -727,7 +1274,6 @@ def seed_products():
     print(f"   - Small pet products: {len(small_pet_products)}")
     print(f"   - Supplements: {len(supplement_products)}")
     print(f"   - Shoes/Apparel: {len(apparel_products)}")
-    db.close()
 
 
 if __name__ == "__main__":

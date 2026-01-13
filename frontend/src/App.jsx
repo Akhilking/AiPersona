@@ -1,4 +1,4 @@
-// App.jsx - Remove Calculator Route
+// App.jsx - Unified Products Page with Toggle
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore, useProfileStore } from './store';
@@ -13,9 +13,9 @@ import ProfileTemplateSelector from './pages/ProfileTemplateSelector';
 import ProfileBuilder from './pages/ProfileBuilder';
 import Comparison from './pages/Comparison';
 import ProfileEdit from './pages/ProfileEdit';
-import ProfileShopping from './pages/ProfileShopping';
 import { useEffect } from 'react';
 import Wishlist from './pages/Wishlist';
+import FAQ from './pages/FAQ';
 
 function App() {
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -40,7 +40,7 @@ function App() {
             <main className={isAuthenticated ? "container mx-auto px-4 py-8" : ""}>
                 <Routes>
                     <Route path="/login" element={
-                        isAuthenticated ? <Navigate to="/" replace /> : <Login />
+                        isAuthenticated ? <Navigate to="/products" replace /> : <Login />
                     } />
 
                     <Route path="/" element={
@@ -81,15 +81,8 @@ function App() {
                         </ProtectedRoute>
                     } />
 
-                    <Route path="/profile/shopping" element={
-                        <ProtectedRoute><ProfileShopping /></ProtectedRoute>
-                    } />
-
-                    <Route path="/recommendations" element={
-                        <Navigate to="/products" replace />
-                    } />
-
                     <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
+                    <Route path="/faq" element={<ProtectedRoute><FAQ /></ProtectedRoute>} />
                 </Routes>
             </main>
         </div>

@@ -188,3 +188,21 @@ class UserResponse(BaseModel):
 class TokenData(BaseModel):
     """JWT token payload"""
     user_id: Optional[str] = None
+    
+
+class WishlistCreate(BaseModel):
+    product_id: UUID
+    profile_id: Optional[UUID] = None
+    notes: Optional[str] = None
+
+class WishlistResponse(BaseModel):
+    id: UUID
+    user_id: UUID
+    product_id: UUID
+    profile_id: Optional[UUID]
+    notes: Optional[str]
+    added_at: datetime
+    product: dict  # Contains product details from join
+
+    class Config:
+        from_attributes = True

@@ -1,22 +1,14 @@
-"""
-Profile Service
-Business logic for profile management
-"""
-
-from sqlalchemy.orm import Session
 from uuid import UUID
-from typing import List, Optional
+from typing import List, Optional, Dict
 from datetime import datetime
-
-from app.models import Profile
-from app.schemas import ProfileCreate, ProfileUpdate
+import uuid as uuid_lib
 
 
 class ProfileService:
-    def __init__(self, db: Session):
-        self.db = db
+    def __init__(self, db):
+        self.db = db  # supabase client
     
-    def create_profile(self, profile_data: ProfileCreate, user_id: UUID) -> Profile:
+    def create_profile(self, profile_data, user_id: UUID) -> Dict:
         """Create a new pet profile with calculated fields"""
         
         # Calculate size category based on weight and category
@@ -29,86 +21,82 @@ class ProfileService:
             else:
                 size_category = "large"
         
-        profile = Profile(
-            user_id=user_id,
-            name=profile_data.name,
-            profile_category=profile_data.profile_category,
-            pet_type=profile_data.profile_category if profile_data.profile_category in ["dog", "cat"] else None,
-            age_years=profile_data.age_years,
-            weight_lbs=profile_data.weight_lbs,
-            size_category=size_category,
-            allergies=profile_data.allergies,
-            health_conditions=profile_data.health_conditions,
-            preferences=profile_data.preferences,
-            profile_data=profile_data.profile_data
-        )
+        profile = {
+            "id": str(uuid_lib.uuid4()),
+            "user_id": str(user_id),
+            "name": profile_data.name,
+            "profile_category": profile_data.profile_category,
+            "age_years": profile_data.age_years,
+            "weight_lbs": profile_data.weight_lbs,
+            "size_category": size_category,
+            "allergies": profile_data.allergies or [],
+            "health_conditions": profile_data.health_conditions or [],
+            "preferences": profile_data.preferences or {},
+            "profile_data": profile_data.profile_data or {},
+            "recommended_product_ids": [],
+            "recommendations_cache_version": 1,
+            "created_at": datetime.utcnow().isoformat(),
+            "updated_at": datetime.utcnow().isoformat()
+        }
         
-        self.db.add(profile)
-        self.db.commit()
-        self.db.refresh(profile)
-        return profile
+        response = self.db.table('profiles').insert(profile).execute()
+        return response.data[0] if response.data else None
     
-    def get_profile(self, profile_id: UUID) -> Optional[Profile]:
+    def get_profile(self, profile_id: UUID) -> Optional[Dict]:
         """Get profile by ID"""
-        return self.db.query(Profile).filter(Profile.id == profile_id).first()
+        response = self.db.table('profiles').select('*').eq('id', str(profile_id)).execute()
+        return response.data[0] if response.data else None
     
-    def list_profiles(self, skip: int = 0, limit: int = 100) -> List[Profile]:
-        """List all profiles with pagination"""
-        return self.db.query(Profile).offset(skip).limit(limit).all()
+    def list_profiles(self, user_id: UUID = None, skip: int = 0, limit: int = 100) -> List[Dict]:
+        """List profiles with pagination"""
+        query = self.db.table('profiles').select('*')
+        
+        if user_id:
+            query = query.eq('user_id', str(user_id))
+        
+        response = query.range(skip, skip + limit - 1).execute()
+        return response.data
     
-    def update_profile(self, profile_id: UUID, profile_update: ProfileUpdate) -> Profile:
+    def update_profile(self, profile_id: UUID, profile_update) -> Dict:
         """Update profile and invalidate cache if critical fields changed"""
         profile = self.get_profile(profile_id)
         if not profile:
             raise ValueError("Profile not found")
         
+        # Build update dict
+        update_data = {}
+        for field, value in profile_update.dict(exclude_unset=True).items():
+            if value is not None:
+                update_data[field] = value
+        
         # Check if critical fields are changing
         critical_fields = ['allergies', 'health_conditions', 'age_years', 'profile_category']
-        should_invalidate = any(
-            getattr(profile_update, field, None) is not None 
-            for field in critical_fields
-        )
+        should_invalidate = any(field in update_data for field in critical_fields)
         
-        # Update fields
-        for field, value in profile_update.dict(exclude_unset=True).items():
-            setattr(profile, field, value)
-        
-        profile.updated_at = datetime.utcnow()
-        self.db.commit()
-        self.db.refresh(profile)
+        update_data['updated_at'] = datetime.utcnow().isoformat()
         
         # Invalidate cache if needed
         if should_invalidate:
-            self.invalidate_recommendation_cache(profile_id)
+            update_data['recommended_product_ids'] = []
+            update_data['recommendations_generated_at'] = None
+            update_data['recommendations_cache_version'] = profile.get('recommendations_cache_version', 1) + 1
         
-        return profile
+        response = self.db.table('profiles').update(update_data).eq('id', str(profile_id)).execute()
+        return response.data[0] if response.data else None
     
     def delete_profile(self, profile_id: UUID) -> bool:
         """Delete a profile"""
-        profile = self.get_profile(profile_id)
-        if not profile:
-            return False
-        
-        self.db.delete(profile)
-        self.db.commit()
-        return True
-    
-    @staticmethod
-    def _calculate_size_category(weight_lbs: float) -> str:
-        """Calculate size category from weight"""
-        if weight_lbs <= 20:
-            return "small"
-        elif weight_lbs <= 50:
-            return "medium"
-        else:
-            return "large"
+        response = self.db.table('profiles').delete().eq('id', str(profile_id)).execute()
+        return len(response.data) > 0
     
     def invalidate_recommendation_cache(self, profile_id: UUID) -> None:
         """Invalidate cached recommendations when profile changes"""
-        profile = self.db.query(Profile).filter(Profile.id == profile_id).first()
+        profile = self.get_profile(profile_id)
         if profile:
-            profile.recommended_product_ids = []
-            profile.recommendations_generated_at = None
-            profile.recommendations_cache_version += 1
-            self.db.commit()
-            print(f"🗑️ Invalidated recommendation cache for {profile.name}")
+            update_data = {
+                'recommended_product_ids': [],
+                'recommendations_generated_at': None,
+                'recommendations_cache_version': profile.get('recommendations_cache_version', 1) + 1
+            }
+            self.db.table('profiles').update(update_data).eq('id', str(profile_id)).execute()
+            print(f"🗑️ Invalidated recommendation cache for {profile['name']}")

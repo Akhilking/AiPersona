@@ -1,23 +1,23 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+"""
+Database connection using Supabase REST API (HTTPS)
+"""
+
 import os
 from dotenv import load_dotenv
+from supabase import create_client, Client
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://username:password@localhost:5432/aipersona")
+# Supabase client for REST API operations
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set in .env file")
 
-Base = declarative_base()
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-
+# For backward compatibility with existing code
 def get_db():
-    """Dependency for FastAPI routes"""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    """Dependency for FastAPI routes - returns supabase client"""
+    return supabase

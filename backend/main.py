@@ -4,31 +4,19 @@ from contextlib import asynccontextmanager
 import os
 from dotenv import load_dotenv
 
-from app.database import engine, Base
-from app.routers import profiles, products, recommendations, auth, templates, wishlist  # ADD wishlist
+from app.routers import profiles, products, recommendations, auth, templates, wishlist
 
 load_dotenv()
 
 
-from contextlib import asynccontextmanager
-import asyncio
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Generate product features in background
-    print("🚀 Starting up - generating product features in background...")
-    asyncio.create_task(generate_features_background())
+    # Startup
+    print("🚀 Starting up - Supabase REST API mode...")
+    print("✅ Using HTTPS database connection")
     yield
     # Shutdown
     print("👋 Shutting down...")
-
-async def generate_features_background():
-    """Generate features for products that don't have them"""
-    try:
-        from app.scripts.generate_product_features import generate_all_features
-        await generate_all_features()
-    except Exception as e:
-        print(f"⚠️ Background feature generation failed: {e}")
 
 
 app = FastAPI(
@@ -62,13 +50,14 @@ async def root():
         "message": "AI Persona Shopping API",
         "version": "1.0.0",
         "mvp": "Pet Food",
-        "future_ready": "Multi-niche architecture"
+        "future_ready": "Multi-niche architecture",
+        "database": "Supabase REST API (HTTPS)"
     }
 
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    return {"status": "healthy", "database": "supabase"}
 
 
 if __name__ == "__main__":
