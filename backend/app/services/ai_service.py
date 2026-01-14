@@ -6,12 +6,19 @@ import os
 from typing import Dict, List, Optional
 from openai import OpenAI
 from anthropic import Anthropic
-import ollama
-
+try:
+    from groq import Groq
+except ImportError:
+    Groq = None
+try:
+    import ollama
+except ImportError:
+    ollama = None
+    
 
 class AIService:
     def __init__(self):
-        self.provider = os.getenv("AI_PROVIDER", "ollama").lower()
+        self.provider = os.getenv("AI_PROVIDER", "groq").lower()
         if self.provider == "openai":
             self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
             self.model = "gpt-4o-mini"
@@ -23,6 +30,12 @@ class AIService:
             self.model = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
             self.base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
             print(f"✅ Using LOCAL Ollama model: {self.model}")
+        elif self.provider == "groq":
+            if Groq is None:
+                raise ImportError("groq package not installed. Run: pip install groq")
+            self.client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+            self.model = os.getenv("GROQ_MODEL", "llama-3.1-70b-versatile")
+            print(f"✅ Using Groq (FREE): {self.model}")
         else:
             raise ValueError(f"Unsupported AI provider: {self.provider}")
     
@@ -119,6 +132,17 @@ class AIService:
                     }
                 )
                 content = response['message']['content']
+            elif self.provider == "groq":
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": f"You are a {expert_role} providing personalized recommendations."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.7,
+                    max_tokens=500
+                )
+                content = response.choices[0].message.content
             
             return self._parse_recommendation_response(content)
         
@@ -181,6 +205,18 @@ class AIService:
                     }
                 )
                 content = response['message']['content']
+            elif self.provider == "groq":
+                # Groq - FREE & FAST!
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": f"You are a {expert_role} comparing products."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.7,
+                    max_tokens=400
+                )
+                content = response.choices[0].message.content
             
             return self._parse_comparison_response(content, products)
         

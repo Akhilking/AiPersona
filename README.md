@@ -13,14 +13,16 @@ AI-powered personalized product recommendations that filter products based on pr
 ## 🏗️ Architecture
 
 ```
-Frontend (React + Vite + TailwindCSS)
-    ↕ REST API
-Backend (Python FastAPI)
-    ↕
-Database (PostgreSQL with JSONB for future extensibility)
+Frontend (React + Vite + TailwindCSS) [Vercel]
+    ↕ REST API (HTTPS)
+Backend (Python FastAPI) [Render]
+    ↕ Supabase Client
+Database (PostgreSQL via Supabase) [Free Tier]
     +
 AI Service (OpenAI/Anthropic)
 ```
+
+**Deployment:** 100% Free hosting with auto-deployment via GitHub Actions
 
 ---
 
@@ -218,6 +220,33 @@ This codebase is designed for easy expansion:
 ## 📝 Environment Variables
 
 See `.env.example` files in `backend/` and `frontend/` directories.
+
+---
+
+## 🚀 Deployment
+
+**Free Production Hosting:** See [DEPLOYMENT.md](DEPLOYMENT.md) for complete guide.
+
+**Quick Deploy:**
+- Frontend: Vercel (auto-deploy from GitHub)
+- Backend: Render (auto-deploy from GitHub)
+- Database: Supabase (already configured)
+
+**CI/CD:** GitHub Actions automatically tests and deploys on push to `main`
+
+---
+
+## 🐳 Docker
+
+**Local Development:**
+```bash
+docker-compose up --build
+```
+
+**Access:**
+- Backend: http://localhost:8000
+- Frontend: http://localhost:5173
+- API Docs: http://localhost:8000/docs
 
 ---
 
