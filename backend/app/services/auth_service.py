@@ -27,7 +27,8 @@ class AuthService:
     
     @staticmethod
     def get_password_hash(password: str) -> str:
-        return pwd_context.hash(password)
+        password_bytes = password.encode('utf-8')[:72]
+        return pwd_context.hash(password_bytes.decode('utf-8'))
     
     @staticmethod
     def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
