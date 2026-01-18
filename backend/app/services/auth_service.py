@@ -23,7 +23,8 @@ class AuthService:
     
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
-        return pwd_context.verify(plain_password, hashed_password)
+        password_bytes = plain_password.encode('utf-8')[:72]
+        return pwd_context.verify(password_bytes.decode('utf-8'), hashed_password)
     
     @staticmethod
     def get_password_hash(password: str) -> str:
